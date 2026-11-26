@@ -1,0 +1,27 @@
+﻿exp_seed_used,exp_day,setup.started,setup.stopped,participant,SESSION_ID,date,expName,psychopyVersion,OS,frameRate,STUDY_ID,day2_survey.block_1/question4,day2_survey.block_1/question3,trials_3.thisRepN,trials_3.thisTrialN,trials_3.thisN,trials_3.thisIndex,trials_3.ran,pol_survey.started,pol_survey.stopped,political_slider.response,political_slider.rt,surv_end.keys,surv_end.rt,surv_end.duration,pol_qs.thisRepN,pol_qs.thisTrialN,pol_qs.thisN,pol_qs.thisIndex,pol_qs.ran,political_q,pol_title,filter.started,filter.stopped,filter_cont.keys,filter_cont.rt,filter_cont.duration,day2_instruction.started,day2_instruction.stopped,key_resp_14.keys,key_resp_14.rt,key_resp_14.duration,day_inst.thisRepN,day_inst.thisTrialN,day_inst.thisN,day_inst.thisIndex,day_inst.ran,txt,trial_instruction.started,trial_instruction.stopped,resp.keys,resp.rt,resp.duration,instTrialLoop.thisRepN,instTrialLoop.thisTrialN,instTrialLoop.thisN,instTrialLoop.thisIndex,instTrialLoop.ran,demo_stage,dec_stage,instText_L,instText_R
+1548856915,2,0.0032,0.0034,6a4f5257c5adb9f372972db5,2,2026-08-11_01h12.09.113,learning_task,2026.1.3,Win32,60.24096386,6a79e35616ac3a8662046261,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,2,2026-08-11_01h12.09.113,learning_task,2026.1.3,Win32,60.24096386,6a79e35616ac3a8662046261,Item 1,Item 1,0,0,0,0,1,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,2,2026-08-11_01h12.09.113,learning_task,2026.1.3,Win32,60.24096386,6a79e35616ac3a8662046261,,,,,,,,3.3437,4.7996,81.25606736,1.3553,space,0.4213,,0,0,0,2,1,An individual's right to own firearms should be protected with minimal restriction.,<Gun rights>,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,2,2026-08-11_01h12.09.113,learning_task,2026.1.3,Win32,60.24096386,6a79e35616ac3a8662046261,,,,,,,,4.801,6.0334,22.67583657,1.1878,space,0.201,,0,1,1,3,1,"Corporate hiring should actively promote diversity, equity, and inclusion (DEI) programs",<DEI>,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,2,2026-08-11_01h12.09.113,learning_task,2026.1.3,Win32,60.24096386,6a79e35616ac3a8662046261,,,,,,,,6.0346,7.3331,15.31826605,1.271,space,0.2677,,0,2,2,1,1,Abortion should be legal in most circumstances.,<Abortion>,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,2,2026-08-11_01h12.09.113,learning_task,2026.1.3,Win32,60.24096386,6a79e35616ac3a8662046261,,,,,,,,7.3346,8.6161,84.75968831,1.2055,space,0.2499,,0,3,3,0,1,Enforcement and removal of people residing in the country without legal authorization should be strengthened.,<Deportation>,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,2,2026-08-11_01h12.09.113,learning_task,2026.1.3,Win32,60.24096386,6a79e35616ac3a8662046261,,,,,,,,,,,,,,,,,,,,,,8.6184,9.0609,space,0.4262,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,2,2026-08-11_01h12.09.113,learning_task,2026.1.3,Win32,60.24096386,6a79e35616ac3a8662046261,,,,,,,,,,,,,,,,,,,,,,,,,,,9.0996,9.3706,space,0.2541,,0,0,0,0,1,"Welcome back! Since you already know how this experiment works, here is a quick reminder of the rules before we begin:
+
+- Your Goal: Maximize your payoff by choosing the image with the higher probability of a reward (+10 points). Points convert to total payoff at the end (200 points = $1).
+
+- The Profiles: You will review past participants' profiles (Political Orientation and IQ). You will then be assigned to observe one specific participant and asked to rate how close you feel to them (0-100).
+
+- The Task: You will use the other participant's past choices to help guide your own. Remember that not all participants learned equally well.",,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,2,2026-08-11_01h12.09.113,learning_task,2026.1.3,Win32,60.24096386,6a79e35616ac3a8662046261,,,,,,,,,,,,,,,,,,,,,,,,,,,9.372,9.5255,space,0.1268,,0,1,1,1,1,"A round then proceeds as follows:
+
+1. Predict what the other participant will choose
+2. Observe what they actually choose
+3. Make your own choice
+
+To view a round, press the <Space> key.",,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,2,2026-08-11_01h12.09.113,learning_task,2026.1.3,Win32,60.24096386,6a79e35616ac3a8662046261,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,9.5504,10.1416,space,0.0823,,0,0,0,0,1,options,,"On each trial, you will see a photo of the participant and two images. You will now observe which image they chose.
+Rewards are probabilistic, one image always has a higher reward probability, but 𝐧𝐞𝐢𝐭𝐡𝐞𝐫 𝐠𝐮𝐚𝐫𝐚𝐧𝐭𝐞𝐞𝐬 𝐚 𝐫𝐞𝐰𝐚𝐫𝐝 on every round.",
+,,,,6a4f5257c5adb9f372972db5,2,2026-08-11_01h12.09.113,learning_task,2026.1.3,Win32,60.24096386,6a79e35616ac3a8662046261,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1466,10.7577,space,0.0861,,0,1,1,1,1,options,,"You will first predict which image the participant chose.
+To indicate your prediction, press the left arrow key to select the left image, or the right arrow key to select the right image.
+",

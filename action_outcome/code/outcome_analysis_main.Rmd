@@ -1,0 +1,1439 @@
+---
+title: "Outcome-based observational learning: model-free analysis"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    self_contained: true
+    code_folding: show
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  message = FALSE,
+  warning = TRUE,
+  error = FALSE,
+  cache = FALSE
+)
+```
+
+# 0. Setup
+
+## 0.1 Packages
+
+```{r packages}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(patchwork)
+library(lme4)
+library(lmerTest)
+library(emmeans)
+library(afex)
+```
+
+## 0.2 Input file and analysis settings
+
+```{r settings}
+raw_data_file <- "../main_data/filtered_data/all_sessions_approved_combined_with_demo.csv"
+
+figure_dir <- "../figures"
+dir.create(figure_dir, recursive = TRUE, showWarnings = FALSE)
+
+attention_required <- 0.70
+omission_prop_max  <- 0.05
+n_main_trials     <- 264
+omission_cutoff   <- omission_prop_max * n_main_trials
+learning_rho_max  <- 0.05
+learning_acc_max  <- 0.55
+chance_level      <- 0.5
+n_demo_trials_per_block <- 11
+```
+
+## 0.3 Figure style
+
+```{r figure-style}
+theme_set(
+  theme_classic(base_size = 10, base_family = "sans") +
+    theme(axis.text        = element_text(colour = "black"),
+          axis.line        = element_line(colour = "black", linewidth = 0.4),
+          axis.ticks       = element_line(colour = "black", linewidth = 0.4),
+          strip.background = element_blank(),
+          legend.key.size  = grid::unit(0.4, "cm"),
+          legend.position  = "top",
+          plot.title       = element_text(size = 10, face = "bold", hjust = 0),
+          plot.tag         = element_text(face = "bold", size = 12))
+)
+
+colour_grouping <- c("in" = "#2B6CC4", "out" = "#E03C31")
+colour_iq       <- c("high" = "#009E73", "low" = "#CC79A7")
+label_grouping  <- c("in" = "In-group", "out" = "Out-group")
+label_iq        <- c("high" = "High IQ", "low" = "Low IQ")
+```
+
+```{r performance-labels}
+colour_perf <- c("bad" = "#D55E00", "superb" = "#0072B2")
+label_perf  <- c("bad" = "Bad", "superb" = "Superb")
+condition_levels <- c("In-group, High IQ", "In-group, Low IQ", "Out-group, High IQ", "Out-group, Low IQ")
+```
+
+# 1. Data import and preprocessing (all participants)
+
+## 1.1 Raw data
+
+```{r raw-data}
+raw_data <- read.csv(raw_data_file, colClasses = c(participant = "character"),
+                     na.strings = c("", "NA")) %>%
+  mutate(across(where(is.character), ~ na_if(.x, "")))
+
+cat(n_distinct(raw_data$participant), "participants before exclusion")
+```
+
+## 1.2 Session completion and block-level information
+
+```{r preprocessed-data}
+session_completion <- raw_data %>%
+  filter(!is.na(condition)) %>%
+  mutate(session = case_when(grepl("session1", source_session) ~ "session1",
+                             grepl("session2", source_session) ~ "session2")) %>%
+  group_by(participant) %>%
+  summarise(has_s1 = any(session == "session1", na.rm = TRUE),
+            has_s2 = any(session == "session2", na.rm = TRUE),
+            completed_both = has_s1 & has_s2, .groups = "drop")
+
+preprocessed_data <- raw_data %>%
+  group_by(participant, source_session, SESSION_ID) %>%
+  fill(phase, block, condition, demo_img, demo_iq, .direction = "down") %>%
+  ungroup()
+
+session_completion %>% count(completed_both)
+```
+
+## 1.3 Main-phase data
+
+```{r main-phase-data}
+all_main_phase_data <- preprocessed_data %>%
+  filter(phase == "main", !is.na(condition), !is.na(demo_img)) %>%
+  mutate(grouping = factor(case_when(grepl("^in", condition) ~ "in",
+                                     grepl("^out", condition) ~ "out"),
+                           levels = c("in", "out")),
+         iq = factor(case_when(grepl("highIQ", condition) ~ "high",
+                               grepl("lowIQ", condition) ~ "low"),
+                     levels = c("high", "low")),
+         perf = factor(case_when(grepl("lowPerf", condition) ~ "bad",
+                                 grepl("highPerf", condition) ~ "superb"),
+                       levels = c("bad", "superb")),
+         block_id = interaction(participant, source_session, SESSION_ID, block,
+                                condition, demo_img, drop = TRUE)) %>%
+  group_by(block_id) %>%
+  fill(perf_expectation_post, .direction = "up") %>%
+  ungroup()
+```
+
+## 1.4 Demonstrator accuracy per block
+
+```{r block-demo-accuracy}
+block_demo_accuracy <- all_main_phase_data %>%
+  filter(!is.na(trial_num)) %>%
+  group_by(block_id) %>%
+  summarise(n_demo_trials = n(),
+            demo_accuracy = round(100 * mean(demo_result == "correct", na.rm = TRUE)),
+            .groups = "drop")
+
+block_demo_accuracy %>% count(n_demo_trials, demo_accuracy)
+```
+
+## 1.5 Trial-level data (all participants)
+
+Omitted responses are coded as NA using response times and response sides.
+
+```{r all-trial-data}
+all_trial_data <- all_main_phase_data %>%
+  filter(!is.na(trial_num)) %>%
+  mutate(choice_correct = if_else(is.na(dec_resp_rt) | is.na(dec_side),
+                                  NA_integer_, as.integer(dec_side == dec_pos)),
+         pred_correct = if_else(is.na(obs_resp_rt) | is.na(pred_side),
+                                NA_integer_, as.integer(pred_side == demo_chosen_side)),
+         choice_rt = dec_resp_rt * 1000,
+         pred_rt = obs_resp_rt * 1000,
+         participant_chose_highprob = as.logical(choice_correct),
+         demo_chose_highprob = demo_chosen_side == obs_pos,
+         imitated = as.integer(participant_chose_highprob == demo_chose_highprob),
+         demo_correct = as.integer(demo_chose_highprob),
+         pred_chose_highprob = if_else(is.na(obs_resp_rt) | is.na(pred_side),
+                                       NA_integer_, as.integer(pred_side == obs_pos))) %>%
+  left_join(block_demo_accuracy, by = "block_id")
+
+cat(n_distinct(all_trial_data$participant), "participants with main-phase trials,",
+    nrow(all_trial_data), "trials")
+```
+
+# 2. Quality checks and exclusion criteria
+
+## 2.1 Participant-level quality measures
+
+```{r quality-measures}
+participant_omissions <- all_trial_data %>%
+  group_by(participant) %>%
+  summarise(n_trials = n(),
+            pred_omission = sum(is.na(obs_resp_rt) | is.na(pred_side)),
+            choice_omission = sum(is.na(dec_resp_rt) | is.na(dec_side)),
+            .groups = "drop")
+
+participant_attention <- raw_data %>%
+  filter(!is.na(attn_correct)) %>%
+  group_by(participant) %>%
+  summarise(attn_accuracy = mean(attn_correct, na.rm = TRUE),
+            attn_mean_rt = mean(attn_rt, na.rm = TRUE), .groups = "drop")
+
+learning_by_participant <- all_trial_data %>%
+  group_by(participant, trial_num) %>%
+  summarise(accuracy = mean(choice_correct, na.rm = TRUE), .groups = "drop")
+
+participant_learning <- learning_by_participant %>%
+  group_by(participant) %>%
+  summarise(mean_accuracy = mean(accuracy, na.rm = TRUE),
+            rho = if (sum(is.finite(accuracy)) >= 3 &&
+                      n_distinct(accuracy[is.finite(accuracy)]) > 1) {
+              cor(trial_num, accuracy, method = "spearman", use = "complete.obs")
+            } else {
+              NA_real_
+            }, .groups = "drop") %>%
+  mutate(rho = if_else(is.na(rho) & is.finite(mean_accuracy), 0, rho))
+
+participant_quality_check <- raw_data %>%
+  distinct(participant) %>%
+  left_join(session_completion, by = "participant") %>%
+  left_join(participant_omissions, by = "participant") %>%
+  left_join(participant_attention, by = "participant") %>%
+  left_join(participant_learning, by = "participant")
+```
+
+## 2.2 Exclusion criteria
+
+Both sessions are required. Participants are excluded for attention accuracy \<70%, more than 5% of the planned 264 responses omitted (for both choice and prediction), mean accuracy ≤55%.
+
+```{r exclusion}
+participant_exclusion_summary <- participant_quality_check %>%
+  mutate(excl_session = !coalesce(completed_both, FALSE),
+         excl_no_trials = is.na(n_trials) | n_trials == 0,
+         excl_attention = coalesce(attn_accuracy < attention_required, TRUE),
+         excl_choice_omission = coalesce(choice_omission > omission_cutoff, TRUE),
+         excl_pred_omission = coalesce(pred_omission > omission_cutoff, TRUE),
+         excl_learning = coalesce(mean_accuracy <= learning_acc_max, TRUE),
+         excluded_choice = excl_session | excl_no_trials | excl_attention |
+           excl_choice_omission | excl_pred_omission | excl_learning,
+         excluded_prediction = excluded_choice)
+
+included_ids <- participant_exclusion_summary %>%
+  filter(!excluded_choice) %>% pull(participant)
+prediction_included_ids <- participant_exclusion_summary %>%
+  filter(!excluded_prediction) %>% pull(participant)
+```
+
+## 2.3 Exclusion counts
+
+```{r exclusion-counts}
+participant_exclusion_summary %>%
+  summarise(all_participants = n(),
+            incomplete_sessions = sum(excl_session),
+            no_main_trials = sum(excl_no_trials),
+            excluded_choice = sum(excluded_choice),
+            included_choice = sum(!excluded_choice),
+            excluded_prediction = sum(excluded_prediction),
+            included_prediction = sum(!excluded_prediction))
+
+participant_exclusion_summary %>%
+  filter(!excl_session) %>%
+  summarise(attention = sum(excl_attention),
+            choice_omissions = sum(excl_choice_omission),
+            prediction_omissions = sum(excl_pred_omission),
+            learning = sum(excl_learning))
+
+participant_exclusion_summary %>%
+  filter(excluded_choice | excluded_prediction) %>%
+  mutate(across(c(attn_accuracy, mean_accuracy, rho), ~ round(.x, 3)))
+```
+
+# 3. Analysis data (included participants only)
+
+Manipulation checks, choice and imitation analyses use the choice sample. Prediction analyses use their own included sample. Trial number is centred at trial 6 (raw trial number 5).
+
+```{r included-data}
+main_phase_data <- all_main_phase_data %>%
+  filter(participant %in% included_ids)
+
+trial_data <- all_trial_data %>%
+  filter(participant %in% included_ids) %>%
+  mutate(participant = factor(participant), demo_img = factor(demo_img),
+         trial_c = trial_num - 5)
+
+prediction_trial_data <- all_trial_data %>%
+  filter(participant %in% prediction_included_ids) %>%
+  mutate(participant = factor(participant), demo_img = factor(demo_img),
+         trial_c = trial_num - 5)
+
+demonstrator_ratings <- main_phase_data %>%
+  group_by(participant, block_id, grouping, iq, perf, demo_img) %>%
+  summarise(across(c(closeness_rating, perf_expectation_pre, perf_expectation_post, demo_iq),
+                   ~ first(.x[!is.na(.x)])), .groups = "drop")
+
+demonstrator_data <- demonstrator_ratings %>%
+  left_join(block_demo_accuracy, by = "block_id") %>%
+  mutate(participant = factor(participant), demo_img = factor(demo_img))
+
+tibble(analysis = c("Choice and imitation", "Prediction"),
+       participants = c(n_distinct(trial_data$participant),
+                        n_distinct(prediction_trial_data$participant)),
+       trials = c(nrow(trial_data), nrow(prediction_trial_data)))
+```
+
+# 4. Manipulation checks
+
+## 4.1 Grouping manipulation: closeness rating, in-group vs. out-group
+
+Each participant's closeness ratings are averaged over the in-group and over the out-group demonstrators. Participants with both values are compared with a paired t-test.
+
+```{r closeness-check}
+closeness_wide <- demonstrator_data %>%
+  group_by(participant, grouping) %>%
+  summarise(closeness = mean(closeness_rating, na.rm = TRUE), .groups = "drop") %>%
+  pivot_wider(names_from = grouping, values_from = closeness) %>%
+  filter(!is.na(`in`), !is.na(out))
+
+closeness_t_test <- t.test(closeness_wide$`in`, closeness_wide$out, paired = TRUE)
+closeness_t_test
+
+closeness_difference <- closeness_wide$`in` - closeness_wide$out
+tibble(n              = nrow(closeness_wide),
+       mean_in        = mean(closeness_wide$`in`),
+       sd_in          = sd(closeness_wide$`in`),
+       mean_out       = mean(closeness_wide$out),
+       sd_out         = sd(closeness_wide$out),
+       mean_diff      = mean(closeness_difference),
+       ci_diff_low    = closeness_t_test$conf.int[1],
+       ci_diff_high   = closeness_t_test$conf.int[2],
+       t              = unname(closeness_t_test$statistic),
+       df             = unname(closeness_t_test$parameter),
+       p_t            = closeness_t_test$p.value,
+       cohens_dz      = mean(closeness_difference) / sd(closeness_difference)) %>%
+  mutate(p_t = scales::pvalue(p_t, accuracy = 0.001), across(where(is.numeric), ~ round(.x, 3)))
+```
+
+```{r closeness-figure, fig.width=3.6, fig.height=3.4}
+set.seed(1)
+closeness_jitter <- tibble(participant = closeness_wide$participant,
+                           jitter      = runif(nrow(closeness_wide), -0.06, 0.06))
+
+closeness_plot_data <- closeness_wide %>%
+  pivot_longer(c(`in`, out), names_to = "grouping", values_to = "closeness") %>%
+  left_join(closeness_jitter, by = "participant") %>%
+  mutate(grouping = factor(grouping, levels = c("in", "out")),
+         x_point  = as.numeric(grouping) + jitter)
+
+closeness_plot_summary <- closeness_plot_data %>%
+  group_by(grouping) %>%
+  summarise(n = n(), mean = mean(closeness), sd = sd(closeness), .groups = "drop") %>%
+  mutate(ci_half = qt(0.975, n - 1) * sd / sqrt(n),
+         x_mean  = as.numeric(grouping) + c(-0.25, 0.25))   
+
+closeness_range <- diff(range(closeness_plot_data$closeness))
+closeness_significance <- tibble(p = closeness_t_test$p.value,
+                                 y = max(closeness_plot_data$closeness) + 0.08 * closeness_range) %>%
+  filter(p < .05) %>%
+  mutate(label = case_when(p < .001 ~ "***", p < .01 ~ "**", TRUE ~ "*"))
+
+fig_closeness <- ggplot(closeness_plot_data, aes(x = x_point, y = closeness)) +
+  geom_line(aes(group = participant), colour = "grey75", linewidth = 0.3) +
+  geom_point(aes(colour = grouping), size = 1.4, alpha = 0.6) +
+  geom_errorbar(data = closeness_plot_summary, aes(x = x_mean, ymin = mean - ci_half, ymax = mean + ci_half),
+                inherit.aes = FALSE, width = 0.08, linewidth = 0.6) +
+  geom_point(data = closeness_plot_summary, aes(x = x_mean, y = mean, fill = grouping),
+             inherit.aes = FALSE, shape = 21, size = 3, colour = "black") +
+  geom_segment(data = closeness_significance, aes(x = 1, xend = 2, y = y, yend = y), inherit.aes = FALSE, linewidth = 0.4) +
+  geom_text(data = closeness_significance, aes(x = 1.5, y = y, label = label), inherit.aes = FALSE, vjust = -0.2, size = 4) +
+  scale_x_continuous(breaks = 1:2, labels = label_grouping[c("in", "out")], expand = expansion(add = 0.45)) +
+  scale_colour_manual(values = colour_grouping, guide = "none") +
+  scale_fill_manual(values = colour_grouping, guide = "none") +
+  scale_y_continuous(expand = expansion(mult = c(0.05, 0.15))) +
+  labs(x = "Demonstrator group", y = "Closeness rating")
+```
+
+## 4.2 IQ manipulation: expected performance before learning, high vs. low IQ
+
+The pre-block performance expectation (`perf_expectation_pre`) is averaged over the high-IQ and over the low-IQ demonstrators of each participant.
+
+```{r iq-check}
+expectation_pre_wide <- demonstrator_data %>%
+  group_by(participant, iq) %>%
+  summarise(expectation_pre = mean(perf_expectation_pre, na.rm = TRUE), .groups = "drop") %>%
+  pivot_wider(names_from = iq, values_from = expectation_pre) %>%
+  filter(!is.na(high), !is.na(low))
+
+expectation_pre_t_test <- t.test(expectation_pre_wide$high, expectation_pre_wide$low, paired = TRUE)
+expectation_pre_t_test
+
+expectation_pre_difference <- expectation_pre_wide$high - expectation_pre_wide$low
+tibble(n              = nrow(expectation_pre_wide),
+       mean_high      = mean(expectation_pre_wide$high),
+       sd_high        = sd(expectation_pre_wide$high),
+       mean_low       = mean(expectation_pre_wide$low),
+       sd_low         = sd(expectation_pre_wide$low),
+       mean_diff      = mean(expectation_pre_difference),
+       ci_diff_low    = expectation_pre_t_test$conf.int[1],
+       ci_diff_high   = expectation_pre_t_test$conf.int[2],
+       t              = unname(expectation_pre_t_test$statistic),
+       df             = unname(expectation_pre_t_test$parameter),
+       p_t            = expectation_pre_t_test$p.value,
+       cohens_dz      = mean(expectation_pre_difference) / sd(expectation_pre_difference)) %>%
+  mutate(p_t = scales::pvalue(p_t, accuracy = 0.001), across(where(is.numeric), ~ round(.x, 3)))
+```
+
+```{r iq-check-figure, fig.width=3.6, fig.height=3.4}
+set.seed(1)
+expectation_pre_jitter <- tibble(participant = expectation_pre_wide$participant,
+                                 jitter      = runif(nrow(expectation_pre_wide), -0.06, 0.06))
+
+expectation_pre_plot_data <- expectation_pre_wide %>%
+  pivot_longer(c(high, low), names_to = "iq", values_to = "expectation_pre") %>%
+  left_join(expectation_pre_jitter, by = "participant") %>%
+  mutate(iq      = factor(iq, levels = c("high", "low")),
+         x_point = as.numeric(iq) + jitter)
+
+expectation_pre_plot_summary <- expectation_pre_plot_data %>%
+  group_by(iq) %>%
+  summarise(n = n(), mean = mean(expectation_pre), sd = sd(expectation_pre), .groups = "drop") %>%
+  mutate(ci_half = qt(0.975, n - 1) * sd / sqrt(n),
+         x_mean  = as.numeric(iq) + c(-0.25, 0.25))
+
+expectation_pre_range <- diff(range(expectation_pre_plot_data$expectation_pre))
+expectation_pre_significance <- tibble(p = expectation_pre_t_test$p.value,
+                                       y = max(expectation_pre_plot_data$expectation_pre) + 0.08 * expectation_pre_range) %>%
+  filter(p < .05) %>%
+  mutate(label = case_when(p < .001 ~ "***", p < .01 ~ "**", TRUE ~ "*"))
+
+fig_expectation_pre <- ggplot(expectation_pre_plot_data, aes(x = x_point, y = expectation_pre)) +
+  geom_line(aes(group = participant), colour = "grey75", linewidth = 0.3) +
+  geom_point(aes(colour = iq), size = 1.4, alpha = 0.6) +
+  geom_errorbar(data = expectation_pre_plot_summary, aes(x = x_mean, ymin = mean - ci_half, ymax = mean + ci_half),
+                inherit.aes = FALSE, width = 0.08, linewidth = 0.6) +
+  geom_point(data = expectation_pre_plot_summary, aes(x = x_mean, y = mean, fill = iq),
+             inherit.aes = FALSE, shape = 21, size = 3, colour = "black") +
+  geom_segment(data = expectation_pre_significance, aes(x = 1, xend = 2, y = y, yend = y), inherit.aes = FALSE, linewidth = 0.4) +
+  geom_text(data = expectation_pre_significance, aes(x = 1.5, y = y, label = label), inherit.aes = FALSE, vjust = -0.2, size = 4) +
+  scale_x_continuous(breaks = 1:2, labels = label_iq[c("high", "low")], expand = expansion(add = 0.45)) +
+  scale_colour_manual(values = colour_iq, guide = "none") +
+  scale_fill_manual(values = colour_iq, guide = "none") +
+  scale_y_continuous(expand = expansion(mult = c(0.05, 0.15))) +
+  labs(x = "Demonstrator IQ", y = "Expected performance (pre)")
+```
+
+## 4.3 Figure: manipulation checks
+
+Grey lines connect the two values of the same participant. Large points with error bars show the mean and 95% CI. Asterisks are shown only when the paired t-test is significant: \* p \< .05, \*\* p \< .01, \*\*\* p \< .001.
+
+```{r manipulation-figure, fig.width=7, fig.height=3.4}
+fig_manipulation_checks <- (fig_closeness | fig_expectation_pre) + plot_annotation(tag_levels = "A")
+fig_manipulation_checks
+
+ggsave(file.path(figure_dir, "manipulation_checks.png"), plot = fig_manipulation_checks,
+       width = 7, height = 3.4, units = "in", dpi = 300, bg = "white")
+```
+
+## 4.4 Expected performance across the four social-prior conditions
+
+A 2 × 2 repeated-measures ANOVA compares participant means, averaging over performance. All six pairwise comparisons use a Tukey adjustment.
+
+```{r expectation-four-conditions}
+expectation_cells <- demonstrator_data %>%
+  group_by(participant, grouping, iq) %>%
+  summarise(expectation_pre = mean(perf_expectation_pre, na.rm = TRUE), .groups = "drop") %>%
+  filter(is.finite(expectation_pre)) %>%
+  group_by(participant) %>%
+  filter(n() == 4) %>%
+  ungroup()
+
+expectation_model <- afex::aov_ez(
+  id = "participant", dv = "expectation_pre", data = expectation_cells,
+  within = c("grouping", "iq"))
+summary(expectation_model)
+
+expectation_emm <- emmeans(expectation_model, ~ grouping * iq)
+summary(expectation_emm)
+summary(pairs(expectation_emm, adjust = "tukey"), infer = c(TRUE, TRUE))
+
+expectation_summary <- expectation_cells %>%
+  group_by(grouping, iq) %>%
+  summarise(n = n(), mean = mean(expectation_pre), sd = sd(expectation_pre), .groups = "drop") %>%
+  mutate(ci_half = qt(0.975, n - 1) * sd / sqrt(n))
+
+expectation_summary %>% mutate(across(where(is.numeric), ~ round(.x, 3)))
+```
+
+```{r expectation-four-conditions-figure, fig.width=4.8, fig.height=3.6}
+fig_expectation_conditions <- ggplot(expectation_cells,
+                                      aes(x = grouping, y = expectation_pre, colour = iq, group = iq)) +
+  geom_line(aes(group = interaction(participant, iq)), alpha = 0.15, linewidth = 0.3,
+            position = position_dodge(width = 0.15)) +
+  geom_point(alpha = 0.25, size = 1, position = position_dodge(width = 0.15)) +
+  geom_line(data = expectation_summary, aes(y = mean), linewidth = 0.9,
+            position = position_dodge(width = 0.15)) +
+  geom_errorbar(data = expectation_summary, aes(y = mean, ymin = mean - ci_half, ymax = mean + ci_half),
+                width = 0.08, position = position_dodge(width = 0.15)) +
+  geom_point(data = expectation_summary, aes(y = mean), size = 3,
+             position = position_dodge(width = 0.15)) +
+  scale_x_discrete(labels = label_grouping) +
+  scale_colour_manual(values = colour_iq, labels = label_iq, name = "Demonstrator IQ") +
+  labs(x = "Demonstrator group", y = "Expected performance (pre)")
+
+fig_expectation_conditions
+
+ggsave(file.path(figure_dir, "expectation_conditions.png"), plot = fig_expectation_conditions,
+       width = 4.8, height = 3.6, units = "in", dpi = 300, bg = "white")
+```
+
+## 4.5 Expectation update by demonstrator accuracy
+
+Post − pre ratings are averaged within participant and demonstrator accuracy. The repeated-measures ANOVA uses participants with all accuracy levels.
+
+```{r expectation-update}
+expectation_update_cells <- demonstrator_data %>%
+  mutate(expectation_change = perf_expectation_post - perf_expectation_pre,
+         demo_accuracy = factor(demo_accuracy)) %>%
+  group_by(participant, demo_accuracy) %>%
+  summarise(expectation_change = mean(expectation_change, na.rm = TRUE), .groups = "drop") %>%
+  filter(is.finite(expectation_change))
+
+n_accuracy_levels <- nlevels(droplevels(expectation_update_cells$demo_accuracy))
+expectation_update_complete <- expectation_update_cells %>%
+  group_by(participant) %>%
+  filter(n() == n_accuracy_levels) %>%
+  ungroup()
+
+cat(n_distinct(expectation_update_complete$participant), "participants with all accuracy levels")
+expectation_update_model <- afex::aov_ez(
+  id = "participant", dv = "expectation_change", data = expectation_update_complete,
+  within = "demo_accuracy")
+summary(expectation_update_model)
+
+expectation_update_emm <- emmeans(expectation_update_model, ~ demo_accuracy)
+summary(pairs(expectation_update_emm, adjust = "tukey"), infer = c(TRUE, TRUE))
+
+expectation_update_summary <- expectation_update_complete %>%
+  group_by(demo_accuracy) %>%
+  summarise(n = n(), mean = mean(expectation_change), sd = sd(expectation_change), .groups = "drop") %>%
+  mutate(ci_half = qt(0.975, n - 1) * sd / sqrt(n))
+
+expectation_update_summary %>% mutate(across(where(is.numeric), ~ round(.x, 3)))
+```
+
+```{r expectation-update-figure, fig.width=4.8, fig.height=3.6}
+fig_expectation_update <- ggplot(expectation_update_complete,
+                                  aes(x = demo_accuracy, y = expectation_change)) +
+  geom_hline(yintercept = 0, linetype = "dashed", colour = "grey50") +
+  geom_line(aes(group = participant), colour = "grey70", alpha = 0.4, linewidth = 0.3) +
+  geom_point(colour = "grey45", alpha = 0.4, size = 1) +
+  geom_line(data = expectation_update_summary, aes(y = mean, group = 1), linewidth = 0.9) +
+  geom_errorbar(data = expectation_update_summary,
+                aes(y = mean, ymin = mean - ci_half, ymax = mean + ci_half), width = 0.08) +
+  geom_point(data = expectation_update_summary, aes(y = mean), size = 2.5) +
+  labs(x = "Demonstrator accuracy (%)", y = "Expectation change (post - pre)")
+
+fig_expectation_update
+ggsave(file.path(figure_dir, "expectation_update.png"), plot = fig_expectation_update,
+       width = 4.8, height = 3.6, units = "in", dpi = 300, bg = "white")
+```
+
+# 5. Choice learning model
+
+Trial-level logistic mixed model of choosing the high-probability option. Fixed effects: trial (centred), grouping, IQ, performance and all their interactions. Random effects: participant intercepts and trial slopes, and demonstrator-image intercepts.
+
+```{r choice-model}
+choice_model <- glmer(
+  choice_correct ~ trial_c + grouping * iq * perf + trial_c * (grouping + iq + perf) +
+    (1 + trial_c | participant) + (1 | demo_img),
+  family    = "binomial",
+  data      = trial_data,
+  contrasts = list(grouping = "contr.sum", iq = "contr.sum", perf = "contr.sum"),
+  control = glmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 200000)))
+
+ summary(choice_model)
+```
+
+```{r choice-model-table}
+choice_model_fixed <- as.data.frame(coef(summary(choice_model)))
+choice_model_ci    <- confint(choice_model, parm = "beta_", method = "Wald")
+
+tibble(term       = rownames(choice_model_fixed),
+       estimate   = choice_model_fixed$Estimate,
+       std_error  = choice_model_fixed$`Std. Error`,
+       z          = choice_model_fixed$`z value`,
+       p_value    = choice_model_fixed$`Pr(>|z|)`,
+       ci_low     = choice_model_ci[, 1],
+       ci_high    = choice_model_ci[, 2]) %>%
+  mutate(p_value = scales::pvalue(p_value, accuracy = 0.001), across(where(is.numeric), ~ round(.x, 3)))
+```
+
+- `trial_c`: average learning slope (log-odds per trial) across all eight conditions.
+- `grouping1`, `iq1`: averaged over performance, half of the in − out (high − low) difference in log-odds at trial 6.
+- `trial_c:grouping1`, `trial_c:iq1`: averaged over performance, half of the in − out (high − low) difference in learning slope.
+- `perf1`: half of the bad − superb difference in log-odds at trial 6, averaged over grouping and IQ.
+- `trial_c:grouping1:iq1`: averaged over performance, whether the in − out slope difference differs between high- and low-IQ demonstrators.
+
+# 6. Overall learning curve
+
+```{r overall-curve-data}
+overall_curve_participant <- trial_data %>%
+  group_by(participant, trial_num) %>%
+  summarise(accuracy = mean(choice_correct, na.rm = TRUE), .groups = "drop") %>%
+  filter(!is.na(accuracy)) %>%
+  mutate(trial = trial_num + 1)                       
+```
+
+**Statistical test.** Learning is tested by the `trial_c` term of the choice learning model (section 5). Below is the model-based average slope across the eight conditions (log-odds per trial), with its odds ratio.
+
+```{r overall-curve-test}
+overall_slope <- summary(emtrends(choice_model, ~ 1, var = "trial_c"), infer = c(TRUE, TRUE))
+overall_slope
+
+tibble(slope_log_odds = overall_slope$trial_c.trend,
+       ci_low         = overall_slope$asymp.LCL,
+       ci_high        = overall_slope$asymp.UCL,
+       odds_ratio_per_trial = exp(overall_slope$trial_c.trend),
+       p_value        = overall_slope$p.value) %>%
+  mutate(p_value = scales::pvalue(p_value, accuracy = 0.001), across(where(is.numeric), ~ round(.x, 3)))
+```
+
+**Descriptive statistics**
+
+```{r overall-curve-descriptives}
+overall_curve_summary <- overall_curve_participant %>%
+  group_by(trial) %>%
+  summarise(n = n(), mean = mean(accuracy), sd = sd(accuracy), .groups = "drop") %>%
+  mutate(ci_low  = mean - qt(0.975, n - 1) * sd / sqrt(n),
+         ci_high = mean + qt(0.975, n - 1) * sd / sqrt(n))
+
+overall_curve_summary %>% mutate(across(where(is.numeric), ~ round(.x, 3)))
+```
+
+**Figure.** Small grey points show each participant's accuracy on each trial, jittered horizontally. The black line and ribbon show the mean and 95% CI. The dashed line is chance.
+
+```{r overall-curve-figure, fig.width=4.5, fig.height=3.5}
+fig_overall_curve <- ggplot(overall_curve_participant, aes(x = trial, y = accuracy)) +
+  geom_hline(yintercept = chance_level, linetype = "dashed", colour = "grey50", linewidth = 0.4) +
+  geom_point(position = position_jitter(width = 0.15, height = 0.01, seed = 1),
+             colour = "grey55", alpha = 0.35, size = 0.8) +
+  geom_ribbon(data = overall_curve_summary, aes(x = trial, ymin = ci_low, ymax = ci_high),
+              inherit.aes = FALSE, fill = "black", alpha = 0.15) +
+  geom_line(data = overall_curve_summary, aes(x = trial, y = mean), inherit.aes = FALSE, linewidth = 1) +
+  geom_point(data = overall_curve_summary, aes(x = trial, y = mean), inherit.aes = FALSE, size = 1.8) +
+  scale_x_continuous(breaks = sort(unique(overall_curve_participant$trial))) +
+  coord_cartesian(ylim = c(0, 1)) +
+  labs(x = "Trial", y = "P(high-probability choice)")
+
+fig_overall_curve
+
+ggsave(file.path(figure_dir, "overall_curve.png"), plot = fig_overall_curve,
+       width = 4.5, height = 3.5, units = "in", dpi = 300, bg = "white")
+```
+
+# 7. Learning curve by grouping
+
+```{r grouping-curve-data}
+grouping_curve_participant <- trial_data %>%
+  group_by(participant, grouping, trial_num) %>%
+  summarise(accuracy = mean(choice_correct, na.rm = TRUE), .groups = "drop") %>%
+  filter(!is.na(accuracy)) %>%
+  mutate(trial = trial_num + 1)
+
+grouping_accuracy_wide <- trial_data %>%
+  group_by(participant, grouping) %>%
+  summarise(accuracy = mean(choice_correct, na.rm = TRUE), .groups = "drop") %>%
+  pivot_wider(names_from = grouping, values_from = accuracy) %>%
+  filter(!is.na(`in`), !is.na(out))
+```
+
+```{r grouping-curve-test}
+coef(summary(choice_model))["grouping1", ]
+
+grouping_accuracy_emm <- emmeans(choice_model, ~ grouping, at = list(trial_c = 0))
+summary(pairs(grouping_accuracy_emm), infer = c(TRUE, TRUE))
+summary(grouping_accuracy_emm, type = "response")     # estimated P(high-probability choice) per group
+```
+
+**Descriptive statistics and effect size** (participant-level mean accuracy over all trials). In-group vs. out-group is compared with a paired t test on each participant's two mean accuracies.
+
+```{r grouping-curve-descriptives}
+grouping_accuracy_t_test <- t.test(grouping_accuracy_wide$`in`, grouping_accuracy_wide$out, paired = TRUE)
+grouping_accuracy_t_test
+
+grouping_accuracy_difference <- grouping_accuracy_wide$`in` - grouping_accuracy_wide$out
+grouping_nonzero_difference  <- grouping_accuracy_difference[grouping_accuracy_difference != 0]
+grouping_difference_ranks    <- rank(abs(grouping_nonzero_difference))
+
+tibble(n             = nrow(grouping_accuracy_wide),
+       mean_in       = mean(grouping_accuracy_wide$`in`),
+       sem_in        = sd(grouping_accuracy_wide$`in`) / sqrt(nrow(grouping_accuracy_wide)),
+       mean_out      = mean(grouping_accuracy_wide$out),
+       sem_out       = sd(grouping_accuracy_wide$out) / sqrt(nrow(grouping_accuracy_wide)),
+       mean_diff     = mean(grouping_accuracy_difference),
+       median_diff   = median(grouping_accuracy_difference),
+       V             = unname(grouping_accuracy_t_test$statistic),
+       p_t           = grouping_accuracy_t_test$p.value,
+       rank_biserial = (sum(grouping_difference_ranks[grouping_nonzero_difference > 0]) -
+                        sum(grouping_difference_ranks[grouping_nonzero_difference < 0])) / sum(grouping_difference_ranks)) %>%
+  mutate(p_t = scales::pvalue(p_t, accuracy = 0.001), across(where(is.numeric), ~ round(.x, 3)))
+
+grouping_curve_summary <- grouping_curve_participant %>%
+  group_by(grouping, trial) %>%
+  summarise(n = n(), mean = mean(accuracy), sd = sd(accuracy), .groups = "drop") %>%
+  mutate(ci_low  = mean - qt(0.975, n - 1) * sd / sqrt(n),
+         ci_high = mean + qt(0.975, n - 1) * sd / sqrt(n))
+
+grouping_curve_summary %>% mutate(across(where(is.numeric), ~ round(.x, 3)))
+```
+
+**Figure.**
+
+- 
+
+  (A) Learning curves. Small points are participant-level accuracies per trial, shifted slightly left (in-group) or right (out-group). Lines and ribbons show the mean and 95% CI.
+
+- 
+
+  (B) Participant-mean accuracy over all trials. Bars show the mean ± SEM, white points are participants, and grey lines connect the same participant's in-group and out-group values.
+
+```{r grouping-curve-figure, fig.width=7.2, fig.height=3.6}
+grouping_curve_plot_data <- grouping_curve_participant %>%
+  mutate(x_point = trial + ifelse(grouping == "in", -0.15, 0.15))
+
+fig_grouping_curve <- ggplot(grouping_curve_plot_data, aes(x = x_point, y = accuracy, colour = grouping)) +
+  geom_hline(yintercept = chance_level, linetype = "dashed", colour = "grey50", linewidth = 0.4) +
+  geom_point(position = position_jitter(width = 0.06, height = 0.01, seed = 1), alpha = 0.25, size = 0.7) +
+  geom_ribbon(data = grouping_curve_summary, aes(x = trial, ymin = ci_low, ymax = ci_high, fill = grouping),
+              inherit.aes = FALSE, alpha = 0.15) +
+  geom_line(data = grouping_curve_summary, aes(x = trial, y = mean, colour = grouping), inherit.aes = FALSE, linewidth = 1) +
+  geom_point(data = grouping_curve_summary, aes(x = trial, y = mean, colour = grouping), inherit.aes = FALSE, size = 1.8) +
+  scale_colour_manual(values = colour_grouping, labels = label_grouping, name = NULL) +
+  scale_fill_manual(values = colour_grouping, labels = label_grouping, name = NULL) +
+  scale_x_continuous(breaks = sort(unique(grouping_curve_participant$trial))) +
+  coord_cartesian(ylim = c(0, 1)) +
+  labs(x = "Trial", y = "P(high-probability choice)")
+
+set.seed(1)
+grouping_accuracy_jitter <- tibble(participant = grouping_accuracy_wide$participant,
+                                 jitter      = runif(nrow(grouping_accuracy_wide), -0.12, 0.12))
+
+grouping_accuracy_plot_data <- grouping_accuracy_wide %>%
+  pivot_longer(c(`in`, out), names_to = "grouping", values_to = "accuracy") %>%
+  left_join(grouping_accuracy_jitter, by = "participant") %>%
+  mutate(grouping = factor(grouping, levels = c("in", "out")),
+         x_point  = as.numeric(grouping) + jitter)
+
+grouping_accuracy_plot_summary <- grouping_accuracy_plot_data %>%
+  group_by(grouping) %>%
+  summarise(n = n(), mean = mean(accuracy), sem = sd(accuracy) / sqrt(n()), .groups = "drop") %>%
+  mutate(x_bar = as.numeric(grouping))
+
+grouping_accuracy_significance <- tibble(p = grouping_accuracy_t_test$p.value,
+                                  y = max(grouping_accuracy_plot_data$accuracy) + 0.04) %>%
+  filter(p < .05) %>%
+  mutate(label = case_when(p < .001 ~ "***", p < .01 ~ "**", TRUE ~ "*"))
+
+fig_grouping_accuracy <- ggplot(grouping_accuracy_plot_data, aes(x = x_point, y = accuracy)) +
+  geom_col(data = grouping_accuracy_plot_summary, aes(x = x_bar, y = mean, fill = grouping),
+           inherit.aes = FALSE, width = 0.6, alpha = 0.55, colour = NA) +
+  geom_hline(yintercept = chance_level, linetype = "dashed", colour = "grey50", linewidth = 0.4) +
+  geom_line(aes(group = participant), colour = "grey70", linewidth = 0.25, alpha = 0.7) +
+  geom_point(shape = 21, fill = "white", colour = "grey25", size = 1.3, stroke = 0.4) +
+  geom_errorbar(data = grouping_accuracy_plot_summary, aes(x = x_bar, ymin = mean - sem, ymax = mean + sem),
+                inherit.aes = FALSE, width = 0.12, linewidth = 0.7) +
+  geom_segment(data = grouping_accuracy_significance, aes(x = 1, xend = 2, y = y, yend = y), inherit.aes = FALSE, linewidth = 0.6) +
+  geom_text(data = grouping_accuracy_significance, aes(x = 1.5, y = y, label = label), inherit.aes = FALSE, vjust = -0.2, size = 5) +
+  scale_x_continuous(breaks = 1:2, labels = label_grouping[c("in", "out")], expand = expansion(add = 0.5)) +
+  scale_fill_manual(values = colour_grouping, guide = "none") +
+  scale_y_continuous(breaks = seq(0, 1, 0.2)) +
+  coord_cartesian(xlim = c(0.4, 2.6), ylim = c(0, 1.08), expand = FALSE) +
+  labs(x = "Demonstrator group", y = "Mean P(high-probability choice)")
+
+
+fig_learning_by_grouping <- (fig_grouping_curve | fig_grouping_accuracy) +
+  plot_layout(widths = c(1.7, 1)) + plot_annotation(tag_levels = "A")
+fig_learning_by_grouping
+
+ggsave(file.path(figure_dir, "learning_by_grouping.png"), plot = fig_learning_by_grouping,
+       width = 7.2, height = 3.6, units = "in", dpi = 300, bg = "white")
+```
+
+# 8. Learning curve by IQ
+
+```{r iq-curve-data}
+iq_curve_participant <- trial_data %>%
+  group_by(participant, iq, trial_num) %>%
+  summarise(accuracy = mean(choice_correct, na.rm = TRUE), .groups = "drop") %>%
+  filter(!is.na(accuracy)) %>%
+  mutate(trial = trial_num + 1)
+
+iq_accuracy_wide <- trial_data %>%
+  group_by(participant, iq) %>%
+  summarise(accuracy = mean(choice_correct, na.rm = TRUE), .groups = "drop") %>%
+  pivot_wider(names_from = iq, values_from = accuracy) %>%
+  filter(!is.na(high), !is.na(low))
+```
+
+**Statistical tests.** These use the choice learning model (section 5): term `iq1`, equivalently the planned contrast high − low for accuracy at the mean trial (averaged over grouping and performance). Differences in learning rate are not tested here.
+
+```{r iq-curve-test}
+coef(summary(choice_model))["iq1", ]
+
+iq_accuracy_emm <- emmeans(choice_model, ~ iq, at = list(trial_c = 0))
+summary(pairs(iq_accuracy_emm), infer = c(TRUE, TRUE))
+summary(iq_accuracy_emm, type = "response")
+```
+
+**Descriptive statistics and effect size.** High vs. low IQ is compared in the same way as in section 7 (paired t test, rank-biserial correlation; positive = higher accuracy for high IQ).
+
+```{r iq-curve-descriptives}
+iq_accuracy_t_test <- t.test(iq_accuracy_wide$high, iq_accuracy_wide$low, paired = TRUE)
+iq_accuracy_t_test
+
+iq_accuracy_difference <- iq_accuracy_wide$high - iq_accuracy_wide$low
+iq_nonzero_difference  <- iq_accuracy_difference[iq_accuracy_difference != 0]
+iq_difference_ranks    <- rank(abs(iq_nonzero_difference))
+
+tibble(n             = nrow(iq_accuracy_wide),
+       mean_high       = mean(iq_accuracy_wide$high),
+       sem_high        = sd(iq_accuracy_wide$high) / sqrt(nrow(iq_accuracy_wide)),
+       mean_low      = mean(iq_accuracy_wide$low),
+       sem_low       = sd(iq_accuracy_wide$low) / sqrt(nrow(iq_accuracy_wide)),
+       mean_diff     = mean(iq_accuracy_difference),
+       median_diff   = median(iq_accuracy_difference),
+       V             = unname(iq_accuracy_t_test$statistic),
+       p_t     = iq_accuracy_t_test$p.value,
+       rank_biserial = (sum(iq_difference_ranks[iq_nonzero_difference > 0]) -
+                        sum(iq_difference_ranks[iq_nonzero_difference < 0])) / sum(iq_difference_ranks)) %>%
+  mutate(p_t = scales::pvalue(p_t, accuracy = 0.001), across(where(is.numeric), ~ round(.x, 3)))
+
+iq_curve_summary <- iq_curve_participant %>%
+  group_by(iq, trial) %>%
+  summarise(n = n(), mean = mean(accuracy), sd = sd(accuracy), .groups = "drop") %>%
+  mutate(ci_low  = mean - qt(0.975, n - 1) * sd / sqrt(n),
+         ci_high = mean + qt(0.975, n - 1) * sd / sqrt(n))
+
+iq_curve_summary %>% mutate(across(where(is.numeric), ~ round(.x, 3)))
+
+```
+
+**Figure.** The layout is the same as in section 7.
+
+```{r iq-curve-figure, fig.width=7.2, fig.height=3.6}
+iq_curve_plot_data <- iq_curve_participant %>%
+  mutate(x_point = trial + ifelse(iq == "high", -0.15, 0.15))
+
+fig_iq_curve <- ggplot(iq_curve_plot_data, aes(x = x_point, y = accuracy, colour = iq)) +
+  geom_hline(yintercept = chance_level, linetype = "dashed", colour = "grey50", linewidth = 0.4) +
+  geom_point(position = position_jitter(width = 0.06, height = 0.01, seed = 1), alpha = 0.25, size = 0.7) +
+  geom_ribbon(data = iq_curve_summary, aes(x = trial, ymin = ci_low, ymax = ci_high, fill = iq),
+              inherit.aes = FALSE, alpha = 0.15) +
+  geom_line(data = iq_curve_summary, aes(x = trial, y = mean, colour = iq), inherit.aes = FALSE, linewidth = 1) +
+  geom_point(data = iq_curve_summary, aes(x = trial, y = mean, colour = iq), inherit.aes = FALSE, size = 1.8) +
+  scale_colour_manual(values = colour_iq, labels = label_iq, name = NULL) +
+  scale_fill_manual(values = colour_iq, labels = label_iq, name = NULL) +
+  scale_x_continuous(breaks = sort(unique(iq_curve_participant$trial))) +
+  coord_cartesian(ylim = c(0, 1)) +
+  labs(x = "Trial", y = "P(high-probability choice)")
+
+set.seed(1)
+iq_accuracy_jitter <- tibble(participant = iq_accuracy_wide$participant,
+                                 jitter      = runif(nrow(iq_accuracy_wide), -0.12, 0.12))
+
+iq_accuracy_plot_data <- iq_accuracy_wide %>%
+  pivot_longer(c(high, low), names_to = "iq", values_to = "accuracy") %>%
+  left_join(iq_accuracy_jitter, by = "participant") %>%
+  mutate(iq = factor(iq, levels = c("high", "low")),
+         x_point  = as.numeric(iq) + jitter)
+
+iq_accuracy_plot_summary <- iq_accuracy_plot_data %>%
+  group_by(iq) %>%
+  summarise(n = n(), mean = mean(accuracy), sem = sd(accuracy) / sqrt(n()), .groups = "drop") %>%
+  mutate(x_bar = as.numeric(iq))
+
+iq_accuracy_significance <- tibble(p = iq_accuracy_t_test$p.value,
+                                  y = max(iq_accuracy_plot_data$accuracy) + 0.04) %>%
+  filter(p < .05) %>%
+  mutate(label = case_when(p < .001 ~ "***", p < .01 ~ "**", TRUE ~ "*"))
+
+fig_iq_accuracy <- ggplot(iq_accuracy_plot_data, aes(x = x_point, y = accuracy)) +
+  geom_col(data = iq_accuracy_plot_summary, aes(x = x_bar, y = mean, fill = iq),
+           inherit.aes = FALSE, width = 0.6, alpha = 0.55, colour = NA) +
+  geom_hline(yintercept = chance_level, linetype = "dashed", colour = "grey50", linewidth = 0.4) +
+  geom_line(aes(group = participant), colour = "grey70", linewidth = 0.25, alpha = 0.7) +
+  geom_point(shape = 21, fill = "white", colour = "grey25", size = 1.3, stroke = 0.4) +
+  geom_errorbar(data = iq_accuracy_plot_summary, aes(x = x_bar, ymin = mean - sem, ymax = mean + sem),
+                inherit.aes = FALSE, width = 0.12, linewidth = 0.7) +
+  geom_segment(data = iq_accuracy_significance, aes(x = 1, xend = 2, y = y, yend = y), inherit.aes = FALSE, linewidth = 0.6) +
+  geom_text(data = iq_accuracy_significance, aes(x = 1.5, y = y, label = label), inherit.aes = FALSE, vjust = -0.2, size = 5) +
+  scale_x_continuous(breaks = 1:2, labels = label_iq[c("high", "low")], expand = expansion(add = 0.5)) +
+  scale_fill_manual(values = colour_iq, guide = "none") +
+  scale_y_continuous(breaks = seq(0, 1, 0.2)) +
+  coord_cartesian(xlim = c(0.4, 2.6), ylim = c(0, 1.08), expand = FALSE) +
+  labs(x = "Demonstrator IQ", y = "Mean P(high-probability choice)")
+
+
+fig_learning_by_iq <- (fig_iq_curve | fig_iq_accuracy) +
+  plot_layout(widths = c(1.7, 1)) + plot_annotation(tag_levels = "A")
+fig_learning_by_iq
+
+ggsave(file.path(figure_dir, "learning_by_iq.png"), plot = fig_learning_by_iq,
+       width = 7.2, height = 3.6, units = "in", dpi = 300, bg = "white")
+```
+
+# 9. Learning curve by performance
+
+```{r perf-curve-data}
+perf_curve_participant <- trial_data %>%
+  group_by(participant, perf, trial_num) %>%
+  summarise(accuracy = mean(choice_correct, na.rm = TRUE), .groups = "drop") %>%
+  filter(!is.na(accuracy)) %>%
+  mutate(trial = trial_num + 1)
+
+perf_accuracy_wide <- trial_data %>%
+  group_by(participant, perf) %>%
+  summarise(accuracy = mean(choice_correct, na.rm = TRUE), .groups = "drop") %>%
+  pivot_wider(names_from = perf, values_from = accuracy) %>%
+  filter(!is.na(bad), !is.na(superb))
+```
+
+**Statistical tests.** These use the choice learning model (section 5): term `perf1`, equivalently the planned contrast bad − superb for accuracy at the mean trial (averaged over grouping and IQ). Differences in learning rate are not tested here.
+
+```{r perf-curve-test}
+coef(summary(choice_model))["perf1", ]
+
+perf_accuracy_emm <- emmeans(choice_model, ~ perf, at = list(trial_c = 0))
+summary(pairs(perf_accuracy_emm), infer = c(TRUE, TRUE))
+summary(perf_accuracy_emm, type = "response")
+```
+
+**Descriptive statistics and effect size.** Bad vs. superb performance is compared in the same way as in sections 7–8 (paired t test, rank-biserial correlation; positive = higher accuracy for bad performance).
+
+```{r perf-curve-descriptives}
+perf_accuracy_t_test <- t.test(perf_accuracy_wide$bad, perf_accuracy_wide$superb, paired = TRUE)
+perf_accuracy_t_test
+
+perf_accuracy_difference <- perf_accuracy_wide$bad - perf_accuracy_wide$superb
+perf_nonzero_difference  <- perf_accuracy_difference[perf_accuracy_difference != 0]
+perf_difference_ranks    <- rank(abs(perf_nonzero_difference))
+
+tibble(n             = nrow(perf_accuracy_wide),
+       mean_bad       = mean(perf_accuracy_wide$bad),
+       sem_bad        = sd(perf_accuracy_wide$bad) / sqrt(nrow(perf_accuracy_wide)),
+       mean_superb      = mean(perf_accuracy_wide$superb),
+       sem_superb       = sd(perf_accuracy_wide$superb) / sqrt(nrow(perf_accuracy_wide)),
+       mean_diff     = mean(perf_accuracy_difference),
+       median_diff   = median(perf_accuracy_difference),
+       V             = unname(perf_accuracy_t_test$statistic),
+       p_t      = perf_accuracy_t_test$p.value,
+       rank_biserial = (sum(perf_difference_ranks[perf_nonzero_difference > 0]) -
+                        sum(perf_difference_ranks[perf_nonzero_difference < 0])) / sum(perf_difference_ranks)) %>%
+  mutate(p_t = scales::pvalue(p_t, accuracy = 0.001), across(where(is.numeric), ~ round(.x, 3)))
+
+perf_curve_summary <- perf_curve_participant %>%
+  group_by(perf, trial) %>%
+  summarise(n = n(), mean = mean(accuracy), sd = sd(accuracy), .groups = "drop") %>%
+  mutate(ci_low  = mean - qt(0.975, n - 1) * sd / sqrt(n),
+         ci_high = mean + qt(0.975, n - 1) * sd / sqrt(n))
+
+perf_curve_summary %>% mutate(across(where(is.numeric), ~ round(.x, 3)))
+
+```
+
+**Figure.** The layout is the same as in section 7.
+
+```{r perf-curve-figure, fig.width=7.2, fig.height=3.6}
+perf_curve_plot_data <- perf_curve_participant %>%
+  mutate(x_point = trial + ifelse(perf == "bad", -0.15, 0.15))
+
+fig_perf_curve <- ggplot(perf_curve_plot_data, aes(x = x_point, y = accuracy, colour = perf)) +
+  geom_hline(yintercept = chance_level, linetype = "dashed", colour = "grey50", linewidth = 0.4) +
+  geom_point(position = position_jitter(width = 0.06, height = 0.01, seed = 1), alpha = 0.25, size = 0.7) +
+  geom_ribbon(data = perf_curve_summary, aes(x = trial, ymin = ci_low, ymax = ci_high, fill = perf),
+              inherit.aes = FALSE, alpha = 0.15) +
+  geom_line(data = perf_curve_summary, aes(x = trial, y = mean, colour = perf), inherit.aes = FALSE, linewidth = 1) +
+  geom_point(data = perf_curve_summary, aes(x = trial, y = mean, colour = perf), inherit.aes = FALSE, size = 1.8) +
+  scale_colour_manual(values = colour_perf, labels = label_perf, name = NULL) +
+  scale_fill_manual(values = colour_perf, labels = label_perf, name = NULL) +
+  scale_x_continuous(breaks = sort(unique(perf_curve_participant$trial))) +
+  coord_cartesian(ylim = c(0, 1)) +
+  labs(x = "Trial", y = "P(high-probability choice)")
+
+set.seed(1)
+perf_accuracy_jitter <- tibble(participant = perf_accuracy_wide$participant,
+                                 jitter      = runif(nrow(perf_accuracy_wide), -0.12, 0.12))
+
+perf_accuracy_plot_data <- perf_accuracy_wide %>%
+  pivot_longer(c(bad, superb), names_to = "perf", values_to = "accuracy") %>%
+  left_join(perf_accuracy_jitter, by = "participant") %>%
+  mutate(perf = factor(perf, levels = c("bad", "superb")),
+         x_point  = as.numeric(perf) + jitter)
+
+perf_accuracy_plot_summary <- perf_accuracy_plot_data %>%
+  group_by(perf) %>%
+  summarise(n = n(), mean = mean(accuracy), sem = sd(accuracy) / sqrt(n()), .groups = "drop") %>%
+  mutate(x_bar = as.numeric(perf))
+
+perf_accuracy_significance <- tibble(p = perf_accuracy_t_test$p.value,
+                                  y = max(perf_accuracy_plot_data$accuracy) + 0.04) %>%
+  filter(p < .05) %>%
+  mutate(label = case_when(p < .001 ~ "***", p < .01 ~ "**", TRUE ~ "*"))
+
+fig_perf_accuracy <- ggplot(perf_accuracy_plot_data, aes(x = x_point, y = accuracy)) +
+  geom_col(data = perf_accuracy_plot_summary, aes(x = x_bar, y = mean, fill = perf),
+           inherit.aes = FALSE, width = 0.6, alpha = 0.55, colour = NA) +
+  geom_hline(yintercept = chance_level, linetype = "dashed", colour = "grey50", linewidth = 0.4) +
+  geom_line(aes(group = participant), colour = "grey70", linewidth = 0.25, alpha = 0.7) +
+  geom_point(shape = 21, fill = "white", colour = "grey25", size = 1.3, stroke = 0.4) +
+  geom_errorbar(data = perf_accuracy_plot_summary, aes(x = x_bar, ymin = mean - sem, ymax = mean + sem),
+                inherit.aes = FALSE, width = 0.12, linewidth = 0.7) +
+  geom_segment(data = perf_accuracy_significance, aes(x = 1, xend = 2, y = y, yend = y), inherit.aes = FALSE, linewidth = 0.6) +
+  geom_text(data = perf_accuracy_significance, aes(x = 1.5, y = y, label = label), inherit.aes = FALSE, vjust = -0.2, size = 5) +
+  scale_x_continuous(breaks = 1:2, labels = label_perf[c("bad", "superb")], expand = expansion(add = 0.5)) +
+  scale_fill_manual(values = colour_perf, guide = "none") +
+  scale_y_continuous(breaks = seq(0, 1, 0.2)) +
+  coord_cartesian(xlim = c(0.4, 2.6), ylim = c(0, 1.08), expand = FALSE) +
+  labs(x = "Demonstrator performance", y = "Mean P(high-probability choice)")
+
+
+fig_learning_by_perf <- (fig_perf_curve | fig_perf_accuracy) +
+  plot_layout(widths = c(1.7, 1)) + plot_annotation(tag_levels = "A")
+fig_learning_by_perf
+
+ggsave(file.path(figure_dir, "learning_by_perf.png"), plot = fig_learning_by_perf,
+       width = 7.2, height = 3.6, units = "in", dpi = 300, bg = "white")
+```
+
+# 10. Learning curves of the four social-prior conditions by performance
+
+## 10.1 Learning curves of the four conditions in one plot
+
+```{r condition-curve-data}
+condition_curve_participant <- trial_data %>%
+  group_by(participant, grouping, iq, perf, trial_num) %>%
+  summarise(accuracy = mean(choice_correct, na.rm = TRUE), .groups = "drop") %>%
+  filter(!is.na(accuracy)) %>%
+  mutate(trial     = trial_num + 1,
+         condition = factor(paste0(label_grouping[as.character(grouping)], ", ", label_iq[as.character(iq)]),
+                            levels = condition_levels))
+
+condition_curve_summary <- condition_curve_participant %>%
+  group_by(condition, grouping, iq, perf, trial) %>%
+  summarise(n = n(), mean = mean(accuracy), sd = sd(accuracy), .groups = "drop") %>%
+  mutate(ci_low  = mean - qt(0.975, n - 1) * sd / sqrt(n),
+         ci_high = mean + qt(0.975, n - 1) * sd / sqrt(n))
+
+condition_curve_summary %>% mutate(across(where(is.numeric), ~ round(.x, 3)))
+```
+
+```{r condition-curves-combined-figure, fig.width=7.2, fig.height=4.2}
+fig_condition_curves_combined <- ggplot(condition_curve_summary,
+                                        aes(x = trial, y = mean, colour = condition, linetype = condition, shape = condition)) +
+  geom_hline(yintercept = chance_level, linetype = "dashed", colour = "grey60", linewidth = 0.3) +
+  geom_errorbar(aes(ymin = ci_low, ymax = ci_high), width = 0.15, linewidth = 0.35, linetype = "solid",
+                position = position_dodge(width = 0.3), show.legend = FALSE) +
+  geom_line(linewidth = 0.8, position = position_dodge(width = 0.3)) +
+  geom_point(size = 2.2, stroke = 1, fill = "white", position = position_dodge(width = 0.3)) +
+  scale_colour_manual(values = setNames(unname(colour_grouping[c("in", "in", "out", "out")]), condition_levels), name = NULL) +
+  scale_linetype_manual(values = setNames(c("solid", "dashed", "solid", "dashed"), condition_levels), name = NULL) +
+  scale_shape_manual(values = setNames(c(16, 23, 16, 23), condition_levels), name = NULL) +
+  scale_x_continuous(breaks = sort(unique(condition_curve_summary$trial))) +
+  facet_wrap(~ perf, labeller = labeller(perf = label_perf)) +
+  coord_cartesian(ylim = c(0, 1)) +
+  labs(x = "Trial", y = "P(high-probability choice)") +
+  guides(colour = guide_legend(nrow = 2), linetype = guide_legend(nrow = 2), shape = guide_legend(nrow = 2))
+
+fig_condition_curves_combined
+
+ggsave(file.path(figure_dir, "condition_curves_combined.png"), plot = fig_condition_curves_combined,
+       width = 7.2, height = 4.2, units = "in", dpi = 300, bg = "white")
+```
+
+## 10.2 Interaction plot: group x IQ (overall choice accuracy)
+
+Each participant's mean choice accuracy over all trials of each condition is computed first. The plot shows the mean of these participant values per condition with ± 1 SEM error bars, as in the original interaction plot. Lines connect the two groups within each IQ level. The y-axis is zoomed in on the condition means, so it does not start at 0.
+
+```{r interaction-data}
+interaction_cells <- trial_data %>%
+  group_by(participant, grouping, iq, perf) %>%
+  summarise(accuracy = mean(choice_correct, na.rm = TRUE), .groups = "drop") %>%
+  filter(!is.na(accuracy))
+
+interaction_summary <- interaction_cells %>%
+  group_by(grouping, iq, perf) %>%
+  summarise(n = n(), mean = mean(accuracy), sd = sd(accuracy), .groups = "drop") %>%
+  mutate(sem = sd / sqrt(n))
+
+interaction_summary %>% mutate(across(where(is.numeric), ~ round(.x, 3)))
+```
+
+```{r interaction-figure, fig.width=7.2, fig.height=3.6}
+fig_interaction <- ggplot(interaction_summary, aes(x = grouping, y = mean, colour = iq, group = iq)) +
+  geom_line(linewidth = 0.9, position = position_dodge(width = 0.1)) +
+  geom_errorbar(aes(ymin = mean - sem, ymax = mean + sem), width = 0.08, linewidth = 0.5,
+                position = position_dodge(width = 0.1)) +
+  geom_point(size = 3, position = position_dodge(width = 0.1)) +
+  scale_x_discrete(labels = label_grouping) +
+  scale_colour_manual(values = colour_iq, labels = label_iq, name = "Demonstrator IQ") +
+  facet_wrap(~ perf, labeller = labeller(perf = label_perf)) +
+  labs(x = "Demonstrator group", y = "Mean P(high-probability choice)", title = "Choice") +
+  theme(panel.grid.major.y = element_line(colour = "grey90", linewidth = 0.3))
+
+fig_interaction
+
+ggsave(file.path(figure_dir, "interaction.png"), plot = fig_interaction,
+       width = 7.2, height = 3.6, units = "in", dpi = 300, bg = "white")
+```
+
+## 10.3 Choice accuracy and learning slopes within performance
+
+Accuracy contrasts are evaluated at trial 6; slope contrasts are in log-odds per trial. Pairwise comparisons among the four social-prior conditions are Tukey-adjusted within each performance level.
+
+```{r choice-condition-contrasts}
+choice_condition_emm <- emmeans(choice_model, ~ grouping * iq | perf, at = list(trial_c = 0))
+summary(choice_condition_emm, type = "response")
+summary(pairs(choice_condition_emm, adjust = "tukey"), infer = c(TRUE, TRUE))
+
+choice_condition_slopes <- emtrends(choice_model, ~ grouping * iq | perf, var = "trial_c")
+summary(choice_condition_slopes, infer = c(TRUE, TRUE))
+summary(pairs(choice_condition_slopes, adjust = "tukey"), infer = c(TRUE, TRUE))
+
+choice_perf_slopes <- emtrends(choice_model, ~ perf, var = "trial_c")
+summary(choice_perf_slopes, infer = c(TRUE, TRUE))
+summary(pairs(choice_perf_slopes), infer = c(TRUE, TRUE))
+```
+
+# 11. Prediction model and figures
+
+Prediction accuracy is whether the participant correctly predicted the demonstrator's choice. The model includes trial × grouping × IQ × performance, with participant and demonstrator-image random intercepts.
+
+```{r prediction-model}
+prediction_model <- glmer(
+  pred_correct ~ trial_c * grouping * iq * perf +
+    (1 | participant) + (1 | demo_img),
+  family = "binomial", data = prediction_trial_data,
+  contrasts = list(grouping = "contr.sum", iq = "contr.sum", perf = "contr.sum"),
+  control = glmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 200000)))
+
+summary(prediction_model)
+isSingular(prediction_model)
+joint_tests(prediction_model, at = list(trial_c = c(-1, 1)))
+
+prediction_model_fixed <- as.data.frame(coef(summary(prediction_model)))
+prediction_model_ci <- confint(prediction_model, parm = "beta_", method = "Wald")
+
+tibble(term = rownames(prediction_model_fixed),
+       estimate = prediction_model_fixed$Estimate,
+       std_error = prediction_model_fixed$`Std. Error`,
+       z = prediction_model_fixed$`z value`,
+       p_value = prediction_model_fixed$`Pr(>|z|)`,
+       ci_low = prediction_model_ci[, 1],
+       ci_high = prediction_model_ci[, 2]) %>%
+  mutate(p_value = scales::pvalue(p_value, accuracy = 0.001),
+         across(where(is.numeric), ~ round(.x, 3)))
+```
+
+## 11.1 Prediction accuracy and slopes by performance
+
+```{r prediction-contrasts}
+prediction_perf_emm <- emmeans(prediction_model, ~ perf, at = list(trial_c = 0))
+summary(prediction_perf_emm, type = "response")
+summary(pairs(prediction_perf_emm), infer = c(TRUE, TRUE))
+
+prediction_perf_slopes <- emtrends(prediction_model, ~ perf, var = "trial_c")
+summary(prediction_perf_slopes, infer = c(TRUE, TRUE))
+summary(pairs(prediction_perf_slopes), infer = c(TRUE, TRUE))
+
+prediction_condition_emm <- emmeans(prediction_model, ~ grouping * iq | perf,
+                                    at = list(trial_c = 0))
+summary(prediction_condition_emm, type = "response")
+summary(pairs(prediction_condition_emm, adjust = "tukey"), infer = c(TRUE, TRUE))
+
+prediction_condition_slopes <- emtrends(prediction_model, ~ grouping * iq | perf,
+                                        var = "trial_c")
+summary(prediction_condition_slopes, infer = c(TRUE, TRUE))
+```
+
+## 11.2 Prediction curves by grouping, IQ and performance
+
+Means and 95% CIs are calculated across participant-level accuracies.
+
+```{r prediction-grouping-curve}
+prediction_grouping_participant <- prediction_trial_data %>%
+  group_by(participant, grouping, trial_num) %>%
+  summarise(accuracy = mean(pred_correct, na.rm = TRUE), .groups = "drop") %>%
+  filter(is.finite(accuracy)) %>%
+  mutate(trial = trial_num + 1)
+
+prediction_grouping_summary <- prediction_grouping_participant %>%
+  group_by(grouping, trial) %>%
+  summarise(n = n(), mean = mean(accuracy), sd = sd(accuracy), .groups = "drop") %>%
+  mutate(ci_low = mean - qt(0.975, n - 1) * sd / sqrt(n),
+         ci_high = mean + qt(0.975, n - 1) * sd / sqrt(n))
+
+fig_prediction_grouping <- ggplot(prediction_grouping_summary,
+                              aes(x = trial, y = mean, colour = grouping, fill = grouping)) +
+  geom_hline(yintercept = chance_level, linetype = "dashed", colour = "grey50", linewidth = 0.4) +
+  geom_ribbon(aes(ymin = ci_low, ymax = ci_high), alpha = 0.15, colour = NA) +
+  geom_line(linewidth = 0.9) +
+  geom_point(size = 1.8) +
+  scale_colour_manual(values = colour_grouping, labels = label_grouping, name = NULL) +
+  scale_fill_manual(values = colour_grouping, labels = label_grouping, name = NULL) +
+  scale_x_continuous(breaks = 1:11) +
+  coord_cartesian(ylim = c(0, 1)) +
+  labs(x = "Trial", y = "P(correct prediction)")
+```
+
+```{r prediction-iq-curve}
+prediction_iq_participant <- prediction_trial_data %>%
+  group_by(participant, iq, trial_num) %>%
+  summarise(accuracy = mean(pred_correct, na.rm = TRUE), .groups = "drop") %>%
+  filter(is.finite(accuracy)) %>%
+  mutate(trial = trial_num + 1)
+
+prediction_iq_summary <- prediction_iq_participant %>%
+  group_by(iq, trial) %>%
+  summarise(n = n(), mean = mean(accuracy), sd = sd(accuracy), .groups = "drop") %>%
+  mutate(ci_low = mean - qt(0.975, n - 1) * sd / sqrt(n),
+         ci_high = mean + qt(0.975, n - 1) * sd / sqrt(n))
+
+fig_prediction_iq <- ggplot(prediction_iq_summary,
+                              aes(x = trial, y = mean, colour = iq, fill = iq)) +
+  geom_hline(yintercept = chance_level, linetype = "dashed", colour = "grey50", linewidth = 0.4) +
+  geom_ribbon(aes(ymin = ci_low, ymax = ci_high), alpha = 0.15, colour = NA) +
+  geom_line(linewidth = 0.9) +
+  geom_point(size = 1.8) +
+  scale_colour_manual(values = colour_iq, labels = label_iq, name = NULL) +
+  scale_fill_manual(values = colour_iq, labels = label_iq, name = NULL) +
+  scale_x_continuous(breaks = 1:11) +
+  coord_cartesian(ylim = c(0, 1)) +
+  labs(x = "Trial", y = "P(correct prediction)")
+```
+
+```{r prediction-perf-curve}
+prediction_perf_participant <- prediction_trial_data %>%
+  group_by(participant, perf, trial_num) %>%
+  summarise(accuracy = mean(pred_correct, na.rm = TRUE), .groups = "drop") %>%
+  filter(is.finite(accuracy)) %>%
+  mutate(trial = trial_num + 1)
+
+prediction_perf_summary <- prediction_perf_participant %>%
+  group_by(perf, trial) %>%
+  summarise(n = n(), mean = mean(accuracy), sd = sd(accuracy), .groups = "drop") %>%
+  mutate(ci_low = mean - qt(0.975, n - 1) * sd / sqrt(n),
+         ci_high = mean + qt(0.975, n - 1) * sd / sqrt(n))
+
+fig_prediction_perf <- ggplot(prediction_perf_summary,
+                              aes(x = trial, y = mean, colour = perf, fill = perf)) +
+  geom_hline(yintercept = chance_level, linetype = "dashed", colour = "grey50", linewidth = 0.4) +
+  geom_ribbon(aes(ymin = ci_low, ymax = ci_high), alpha = 0.15, colour = NA) +
+  geom_line(linewidth = 0.9) +
+  geom_point(size = 1.8) +
+  scale_colour_manual(values = colour_perf, labels = label_perf, name = NULL) +
+  scale_fill_manual(values = colour_perf, labels = label_perf, name = NULL) +
+  scale_x_continuous(breaks = 1:11) +
+  coord_cartesian(ylim = c(0, 1)) +
+  labs(x = "Trial", y = "P(correct prediction)")
+```
+
+```{r prediction-marginal-figures, fig.width=10, fig.height=3.6}
+fig_prediction_marginal <- (fig_prediction_grouping | fig_prediction_iq | fig_prediction_perf) +
+  plot_annotation(tag_levels = "A")
+fig_prediction_marginal
+
+ggsave(file.path(figure_dir, "prediction_marginal.png"), plot = fig_prediction_marginal,
+       width = 10, height = 3.6, units = "in", dpi = 300, bg = "white")
+```
+
+## 11.3 Prediction curves of the four social-prior conditions by performance
+
+```{r prediction-condition-curve-data}
+prediction_condition_curve_participant <- prediction_trial_data %>%
+  group_by(participant, grouping, iq, perf, trial_num) %>%
+  summarise(accuracy = mean(pred_correct, na.rm = TRUE), .groups = "drop") %>%
+  filter(!is.na(accuracy)) %>%
+  mutate(trial     = trial_num + 1,
+         condition = factor(paste0(label_grouping[as.character(grouping)], ", ", label_iq[as.character(iq)]),
+                            levels = condition_levels))
+
+prediction_condition_curve_summary <- prediction_condition_curve_participant %>%
+  group_by(condition, grouping, iq, perf, trial) %>%
+  summarise(n = n(), mean = mean(accuracy), sd = sd(accuracy), .groups = "drop") %>%
+  mutate(ci_low  = mean - qt(0.975, n - 1) * sd / sqrt(n),
+         ci_high = mean + qt(0.975, n - 1) * sd / sqrt(n))
+
+prediction_condition_curve_summary %>% mutate(across(where(is.numeric), ~ round(.x, 3)))
+```
+
+```{r prediction-condition-curves-combined-figure, fig.width=7.2, fig.height=4.2}
+fig_prediction_condition_curves_combined <- ggplot(prediction_condition_curve_summary,
+                                        aes(x = trial, y = mean, colour = condition, linetype = condition, shape = condition)) +
+  geom_hline(yintercept = chance_level, linetype = "dashed", colour = "grey60", linewidth = 0.3) +
+  geom_errorbar(aes(ymin = ci_low, ymax = ci_high), width = 0.15, linewidth = 0.35, linetype = "solid",
+                position = position_dodge(width = 0.3), show.legend = FALSE) +
+  geom_line(linewidth = 0.8, position = position_dodge(width = 0.3)) +
+  geom_point(size = 2.2, stroke = 1, fill = "white", position = position_dodge(width = 0.3)) +
+  scale_colour_manual(values = setNames(unname(colour_grouping[c("in", "in", "out", "out")]), condition_levels), name = NULL) +
+  scale_linetype_manual(values = setNames(c("solid", "dashed", "solid", "dashed"), condition_levels), name = NULL) +
+  scale_shape_manual(values = setNames(c(16, 23, 16, 23), condition_levels), name = NULL) +
+  scale_x_continuous(breaks = sort(unique(prediction_condition_curve_summary$trial))) +
+  facet_wrap(~ perf, labeller = labeller(perf = label_perf)) +
+  coord_cartesian(ylim = c(0, 1)) +
+  labs(x = "Trial", y = "P(correct prediction)") +
+  guides(colour = guide_legend(nrow = 2), linetype = guide_legend(nrow = 2), shape = guide_legend(nrow = 2))
+
+fig_prediction_condition_curves_combined
+
+ggsave(file.path(figure_dir, "prediction_condition_curves_combined.png"), plot = fig_prediction_condition_curves_combined,
+       width = 7.2, height = 4.2, units = "in", dpi = 300, bg = "white")
+```
+
+# 12. Imitation in the first trial and first five trials
+
+Imitation means choosing the same option as the demonstrator. Trial 1 is raw trial 0; trials 1–5 are raw trials 0–4. These choices follow observed outcomes, including on trial 1.
+
+## 12.1 First-trial imitation
+
+```{r first-trial-imitation-model}
+first_trial_data <- trial_data %>%
+  filter(trial_num == 0)
+
+first_trial_imitation_model <- glmer(
+  imitated ~ grouping * iq * perf + (1 | participant),
+  family = "binomial", data = first_trial_data,
+  contrasts = list(grouping = "contr.sum", iq = "contr.sum", perf = "contr.sum"),
+  control = glmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 200000)))
+
+summary(first_trial_imitation_model)
+isSingular(first_trial_imitation_model)
+joint_tests(first_trial_imitation_model)
+
+first_trial_imitation_emm <- emmeans(first_trial_imitation_model, ~ grouping * iq | perf)
+summary(first_trial_imitation_emm, type = "response")
+summary(pairs(first_trial_imitation_emm, adjust = "tukey"),
+        type = "response", infer = c(TRUE, TRUE))
+```
+
+## 12.2 Imitation over the first five trials
+
+Trial is centred at trial 3 within this window. Condition contrasts are evaluated at trial 3.
+
+```{r first-five-imitation-model}
+first_five_trial_data <- trial_data %>%
+  filter(trial_num %in% 0:4) %>%
+  mutate(early_trial_c = trial_num - 2)
+
+first_five_imitation_model <- glmer(
+  imitated ~ early_trial_c * grouping * iq * perf +
+    (1 + early_trial_c | participant) + (1 | demo_img),
+  family = "binomial", data = first_five_trial_data,
+  contrasts = list(grouping = "contr.sum", iq = "contr.sum", perf = "contr.sum"),
+  control = glmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 200000)))
+
+summary(first_five_imitation_model)
+isSingular(first_five_imitation_model)
+joint_tests(first_five_imitation_model, at = list(early_trial_c = c(-1, 1)))
+
+first_five_imitation_emm <- emmeans(first_five_imitation_model, ~ grouping * iq | perf,
+                                   at = list(early_trial_c = 0))
+summary(first_five_imitation_emm, type = "response")
+summary(pairs(first_five_imitation_emm, adjust = "tukey"),
+        type = "response", infer = c(TRUE, TRUE))
+
+first_five_imitation_slopes <- emtrends(first_five_imitation_model, ~ grouping * iq | perf,
+                                       var = "early_trial_c")
+summary(first_five_imitation_slopes, infer = c(TRUE, TRUE))
+```
+
+## 12.3 Imitation figures
+
+Participant means and 95% CIs are shown separately for each window and performance level.
+
+```{r imitation-descriptives}
+imitation_participant <- bind_rows(
+  first_trial_data %>% mutate(window = "First trial"),
+  first_five_trial_data %>% mutate(window = "First five trials")) %>%
+  group_by(participant, window, grouping, iq, perf) %>%
+  summarise(imitation_rate = mean(imitated, na.rm = TRUE),
+            n_responses = sum(!is.na(imitated)), .groups = "drop") %>%
+  filter(n_responses > 0) %>%
+  mutate(window = factor(window, levels = c("First trial", "First five trials")))
+
+imitation_summary <- imitation_participant %>%
+  group_by(window, grouping, iq, perf) %>%
+  summarise(n = n(), mean = mean(imitation_rate), sd = sd(imitation_rate), .groups = "drop") %>%
+  mutate(ci_low = mean - qt(0.975, n - 1) * sd / sqrt(n),
+         ci_high = mean + qt(0.975, n - 1) * sd / sqrt(n))
+
+imitation_summary %>% mutate(across(where(is.numeric), ~ round(.x, 3)))
+```
+
+```{r imitation-figure, fig.width=7.2, fig.height=6}
+fig_imitation <- ggplot(imitation_participant,
+                        aes(x = grouping, y = imitation_rate, colour = iq, group = iq)) +
+  geom_point(position = position_jitterdodge(jitter.width = 0.06, dodge.width = 0.2, seed = 1),
+             alpha = 0.20, size = 1) +
+  geom_line(data = imitation_summary, aes(y = mean), linewidth = 0.9,
+            position = position_dodge(width = 0.2)) +
+  geom_errorbar(data = imitation_summary, aes(y = mean, ymin = ci_low, ymax = ci_high),
+                width = 0.08, position = position_dodge(width = 0.2)) +
+  geom_point(data = imitation_summary, aes(y = mean), size = 2.8,
+             position = position_dodge(width = 0.2)) +
+  facet_grid(window ~ perf, labeller = labeller(perf = label_perf)) +
+  scale_x_discrete(labels = label_grouping) +
+  scale_colour_manual(values = colour_iq, labels = label_iq, name = "Demonstrator IQ") +
+  coord_cartesian(ylim = c(0, 1)) +
+  labs(x = "Demonstrator group", y = "P(imitating demonstrator)")
+
+fig_imitation
+
+ggsave(file.path(figure_dir, "imitation.png"), plot = fig_imitation,
+       width = 7.2, height = 6, units = "in", dpi = 300, bg = "white")
+```
+
+# 13. Response-time descriptives
+
+```{r response-time-descriptives}
+response_time_participant <- bind_rows(
+  trial_data %>% transmute(participant, grouping, iq, perf,
+                           response = "Choice", rt = choice_rt),
+  prediction_trial_data %>% transmute(participant, grouping, iq, perf,
+                                      response = "Prediction", rt = pred_rt)) %>%
+  filter(!is.na(rt)) %>%
+  group_by(participant, response, grouping, iq, perf) %>%
+  summarise(mean_rt = mean(rt), prop_fast = mean(rt < 200),
+            prop_slow = mean(rt > 10000), .groups = "drop")
+
+response_time_summary <- response_time_participant %>%
+  group_by(response, grouping, iq, perf) %>%
+  summarise(n = n(), mean = mean(mean_rt), sem = sd(mean_rt) / sqrt(n()),
+            prop_fast = mean(prop_fast), prop_slow = mean(prop_slow), .groups = "drop")
+
+response_time_summary %>% mutate(across(where(is.numeric), ~ round(.x, 3)))
+```
+
+```{r response-time-figure, fig.width=7.2, fig.height=5.5}
+fig_response_time <- ggplot(response_time_summary,
+                            aes(x = grouping, y = mean, colour = iq, group = iq)) +
+  geom_line(linewidth = 0.9, position = position_dodge(width = 0.15)) +
+  geom_errorbar(aes(ymin = mean - sem, ymax = mean + sem),
+                width = 0.08, position = position_dodge(width = 0.15)) +
+  geom_point(size = 2.8, position = position_dodge(width = 0.15)) +
+  facet_grid(response ~ perf, labeller = labeller(perf = label_perf)) +
+  scale_x_discrete(labels = label_grouping) +
+  scale_colour_manual(values = colour_iq, labels = label_iq, name = "Demonstrator IQ") +
+  labs(x = "Demonstrator group", y = "Mean response time (ms)")
+
+fig_response_time
+
+ggsave(file.path(figure_dir, "response_time.png"), plot = fig_response_time,
+       width = 7.2, height = 5.5, units = "in", dpi = 300, bg = "white")
+```

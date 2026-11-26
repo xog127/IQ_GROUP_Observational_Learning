@@ -1,0 +1,17 @@
+# R session and IDE files
+.Rhistory
+.RData
+.Ruserdata
+.Rproj.user/
+
+# Generated caches and temporary files
+*_cache/
+*.utf8.md
+*.knit.md
+*.tmp
+~$*
+
+# Operating-system files
+.DS_Store
+Thumbs.db
+desktop.ini

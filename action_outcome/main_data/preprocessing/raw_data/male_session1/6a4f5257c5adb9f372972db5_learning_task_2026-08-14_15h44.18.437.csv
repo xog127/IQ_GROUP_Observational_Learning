@@ -1,0 +1,196 @@
+﻿exp_seed_used,exp_day,setup.started,setup.stopped,participant,SESSION_ID,date,expName,psychopyVersion,OS,frameRate,STUDY_ID,info_survey.block_1/consent,info_survey.block_1/question3,trials_2.thisRepN,trials_2.thisTrialN,trials_2.thisN,trials_2.thisIndex,trials_2.ran,pol_survey.started,pol_survey.stopped,political_slider.response,political_slider.rt,surv_end.keys,surv_end.rt,surv_end.duration,pol_qs.thisRepN,pol_qs.thisTrialN,pol_qs.thisN,pol_qs.thisIndex,pol_qs.ran,political_q,pol_title,filter.started,filter.stopped,filter_cont.keys,filter_cont.rt,filter_cont.duration,general_instruction.started,general_instruction.stopped,key_resp.keys,key_resp.rt,key_resp.duration,inst.thisRepN,inst.thisTrialN,inst.thisN,inst.thisIndex,inst.ran,txt,img_inst,txt_2,trial_instruction.started,trial_instruction.stopped,resp.keys,resp.rt,resp.duration,instTrialLoop.thisRepN,instTrialLoop.thisTrialN,instTrialLoop.thisN,instTrialLoop.thisIndex,instTrialLoop.ran,demo_stage,dec_stage,instText_L,instText_R,extra_instruction.started,extra_instruction.stopped,instExtraLoop.thisRepN,instExtraLoop.thisTrialN,instExtraLoop.thisN,instExtraLoop.thisIndex,instExtraLoop.ran,extra_txt,day2_ei.started,day2_ei.stopped,day2_eiLoop.thisRepN,day2_eiLoop.thisTrialN,day2_eiLoop.thisN,day2_eiLoop.thisIndex,day2_eiLoop.ran,comprehension_quiz.started,comprehension_quiz.stopped,quiz_resp.keys,quiz_resp.rt,quiz_resp.duration,quiz_question_id,quiz_is_correct,quiz_attempt_number,quizLoop.thisRepN,quizLoop.thisTrialN,quizLoop.thisN,quizLoop.thisIndex,quizLoop.ran,quiz_result.started,quiz_result.stopped,quiz_result_resp.keys,quiz_result_resp.rt,quiz_result_resp.duration,practice_setup.started,practice_setup.stopped,practice_start_resp.keys,grouping.started,grouping.stopped,key_resp_3.keys,iq_grouping.started,iq_grouping.stopped,key_resp_10.keys,practice_end.started,practice_end.stopped,key_resp_15.keys,practiceRepeatLoop.thisRepN,practiceRepeatLoop.thisTrialN,practiceRepeatLoop.thisN,practiceRepeatLoop.thisIndex,practiceRepeatLoop.ran,practiceRepeatLoop.order
+1548856915,1,0.0028,0.0031,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,item1,Item 1,0,0,0,0,1,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,4.49,5.8344,83.00787206,1.3256,space,0.2862,,0,0,0,2,1,An individual's right to own firearms should be protected with minimal restriction.,<Gun rights>,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,5.8369,7.1735,78.03276241,1.3145,space,0.3018,,0,1,1,0,1,Enforcement and removal of people residing in the country without legal authorization should be strengthened.,<Deportation>,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,7.1783,8.5059,23.30648118,1.2913,space,0.2945,,0,2,2,3,1,"Corporate hiring should actively promote diversity, equity, and inclusion (DEI) programs",<DEI>,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,8.5075,9.7395,15.52848285,1.1767,space,0.1919,,0,3,3,1,1,Abortion should be legal in most circumstances.,<Abortion>,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,,,,,,,,,,,,,,,9.741,10.1398,space,0.3781,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,,,,,,,,,,,,,,,,,,,,10.1633,10.719,space,0.0379,,0,0,0,0,1,,gi_inst_0.png,"In this experiment, you will be choosing between two given images. Before making your choice, you will be provided with information of other participants and their choices of the same images. Your choice of the images will determine your final payment.
+Press SPACE to continue",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,,,,,,,,,,,,,,,,,,,,10.7436,11.4098,space,0.16,,0,1,1,1,1,"Before making your choice, you will be provided with information about other participants who previously were learning about the same two images. This information includes participant's political orientation and IQ. You will first be shown an overview of multiple participants at the same time.",,"Before the experiment begins, you will view information about other participants who previously completed the same experiment.
+Each participant is represented by a distinct geometric symbol.
+
+Press SPACE to continue.",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,,,,,,,,,,,,,,,,,,,,11.5275,12.0013,space,0.0674,,0,2,2,2,1,Political orientation will be shown as their responses to the political questions they answered before taking part in the experiment. Your responses will also be indicated.,,"The first piece of information about the other participants will be their political orientation, shown as their responses to the political questions they answered before taking part in the experiment. This will be presented once for all participants before the experiment begins.
+
+Press SPACE to continue",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,,,,,,,,,,,,,,,,,,,,12.0405,12.5232,space,0.001,,0,3,3,3,1,You will also be given each participant's IQ information.,,"You will also be given each participant's IQ information.
+The information will be presented once for all participants before the experiment begins
+
+Press SPACE to continue.",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,,,,,,,,,,,,,,,,,,,,12.528,13.0576,space,0.001,,0,4,4,4,1,"After that, you will be noted with which participant you will be observing choices from. ",,"Before observing the choices of a particular participant, their information will be presented again in bold. 
+
+Press SPACE to continue.",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,,,,,,,,,,,,,,,,,,,,13.1708,13.7742,space,0.1842,,0,5,5,5,1,That participant's information (political orientation & IQ) will be presented again individually in bold.,,"You may use both information to predict the participant's choices and to inform your own choices.
+
+Press SPACE to continue",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,,,,,,,,,,,,,,,,,,,,13.8051,14.3403,space,0.034,,0,6,6,6,1,"That participant's information (IQ) will be presented again individually in bold.
+",,"Once you have reviewed the participant information, please rate how well you expect each participant to perform in this experiment, using a scale from 0 to 100.
+This rating will be made twice for each participant: once immediately after you review the participant information, and once again after trials are complete.
+
+Press SPACE to continue.",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,,,,,,,,,,,,,,,,,,,,14.3573,14.9903,space,0.1173,,0,7,7,7,1,"Next, you will be asked to indicate how close you feel to the participant.
+Use the scale ranging from 0 (Not close at all) to 100 (Very close) to rate your overall sense of closeness to them.",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,,,,,,,,,,,,,,,,,,,,14.9937,15.619,space,0.1013,,0,8,8,8,1,,gi_inst_8.png,"You will now observe the past choices made by this specific participant as they tried to learn which of the two images was more rewarding. Please keep in mind that not all participants learned equally well.
+
+Before you are shown what the other person actually chose, you must first predict what you think they selected. You can then decide how best to use their choice to guide your own decision and maximize your payoff.
+
+Note: In the very first round, you will not have seen any of the other person's decisions yet. Therefore, your first prediction will simply be a random guess.",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,,,,,,,,,,,,,,,,,,,,15.6269,16.1404,space,0.0003,,0,9,9,9,1,"A round then proceeds as follows:
+
+1. Predict what the other participant will choose
+2. Observe what they actually choose
+3. Make your own choice
+
+To view a round, press the <Space> key.",,"A round then proceeds as follows:
+
+First, you will see the other person and you should predict the image that the other person has chosen. In the beginning, you should guess to predict the other’s choice, but after few rounds, you will have an idea what they will choose.
+
+Then, it will be shown which image the person actually selected.
+Next, you choose one of the same two images yourself. Note that the position of the images can vary between the other person and you and only the identity matters for determining which image has higher probability of reward.
+
+To view a round, press the <Space> key.",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,16.161,16.7402,space,0.0644,,0,0,0,0,1,options,,"On each trial, you will see a photo of the participant and two images. You will now observe which image they chose.
+Rewards are probabilistic, one image always has a higher reward probability, but 𝐧𝐞𝐢𝐭𝐡𝐞𝐫 𝐠𝐮𝐚𝐫𝐚𝐧𝐭𝐞𝐞𝐬 𝐚 𝐫𝐞𝐰𝐚𝐫𝐝 on every round.",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,16.7425,17.4077,space,0.1317,,0,1,1,1,1,options,,"You will first predict which image the participant chose.
+To indicate your prediction, press the left arrow key to select the left image, or the right arrow key to select the right image.
+",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,17.415,17.9845,space,0.0482,,0,2,2,2,1,predicted,,"Once you have made your prediction, the image you predicted will be marked with a white border.",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,17.9884,18.5696,space,0.0611,,0,3,3,3,1,revealed,,The image the participant actually chose will be marked with a green border.,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,18.5748,19.2744,space,0.1868,,0,4,4,4,1,outcome,,You would be able to observe the outcome (0 or 10 points) for the image selected by the person you are observing.,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,19.2821,19.8072,space,0.0014,,0,5,5,5,1,,options,,"After predicting the other participant's choice, it will be your turn to make your own choice.",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,19.8101,20.4571,space,0.1194,,0,6,6,6,1,,options,,The same two images will be shown again but the left-right position of the images may change. Please 𝐫𝐞𝐦𝐞𝐦𝐛𝐞𝐫 𝐭𝐡𝐞 𝐢𝐦𝐚𝐠𝐞𝐬 𝐭𝐡𝐞𝐦𝐬𝐞𝐥𝐯𝐞𝐬 rather than their position.,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,20.4588,21.2082,space,0.2357,,0,7,7,7,1,,options,,Select whichever image you believe has the higher reward probability using the left or right arrow key.,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,21.2121,21.7575,space,0.0147,,0,8,8,8,1,,chosen,,The image you selected will be marked with a white border.,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,21.7592,22.3417,space,0.051,,0,9,9,9,1,,no_outcome,,The outcome of your chosen option will be concealed by an image as shown above.,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,22.3533,22.3589,0,0,0,0,1,"Please respond as quickly as possible. If a set amount of time passes without a response, the trial will automatically advance to the next one. In such trial, no white border will be indicated to show your response and you will not receive points for the trial.",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,22.3599,22.4242,0,1,1,1,1,"Remember, reward is always probabilistic: the image with a higher probability is sometimes unrewarded (0 points), and the image with a lower probability is sometimes rewarded (+10 points).
+
+You are observing the past choices of other participants so you can potentially use their decisions to guide your own choices.
+
+Once all trials are complete, your final payment will be determined by the total points you earned across all trials.",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,22.4312,22.6247,0,2,2,2,1,You will rate your expectation on how well the other participant chose the image with higher reward probability.,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,22.6321,22.7222,0,3,3,3,1,"During the experiment, brief unannounced questions may be presented at certain points. These questions are intended to check your attention, and whether your response is correct will not be displayed on screen. 
+
+An incorrect response to one of these questions will result in a proportional REDUCTION IN YOUR FINAL REWARD.",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,22.7302,23.4352,0,4,4,4,1,"This concludes the instructions. 
+
+Next, a few multiple-choice questions will appear to confirm your understanding. Please use your number pad keys (1, 2, or 3) to submit your answer.
+
+Incorrect answers will return you to the instructions.
+Press <Enter> to begin.",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,"Reminders:
+
+Time Limits: Please respond as quickly as possible. If the time limit passes, the trial will skip automatically, and you will earn 0 points.
+
+Attention Checks: Brief, unannounced attention questions will appear throughout the experiment. Incorrect answers will result in a proportional reduction in your final reward.
+
+Performance Rating: You will be asked to rate how well you expect the other participant performed.
+
+Final Payout: Remember, your final payment is determined by the total points you earn across all trials (higher probability images = better chance at +10 points).",,,,,,,,,,,,,,,,,,,,,,,,,23.4396,23.4441,0,0,0,0,1,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,"Comprehension Check
+
+To ensure you remember the rules, a short multiple-choice quiz will appear next. Incorrect answers will return you to the beginning of the instructions.
+
+Use your number pad keys (1, 2, or 3) to submit your answers.
+
+Press <Enter> to begin.",,,,,,,,,,,,,,,,,,,,,,,,,23.4448,23.445,0,1,1,1,1,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,23.4475,23.8746,1,0.3195,,Q4,1,1,0,0,0,0,1,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,23.8787,24.0176,1,0.0739,,Q1,1,1,1,0,1,0,1,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,24.02,24.1727,1,0.0871,,Q3,0,1,2,0,2,0,1,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,24.173,24.3075,space,0.108,,24.3078,24.3085,,24.3646,24.3652,,24.3736,24.3745,,24.3755,24.3775,,0,0,0,0,1,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,,,,,,,,,,,,,,,,,,,,24.3846,25.0081,space,0.0961,,0,0,0,0,1,,gi_inst_0.png,"In this experiment, you will be choosing between two given images. Before making your choice, you will be provided with information of other participants and their choices of the same images. Your choice of the images will determine your final payment.
+Press SPACE to continue",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,,,,,,,,,,,,,,,,,,,,25.0171,25.6357,space,0.101,,0,1,1,1,1,"Before making your choice, you will be provided with information about other participants who previously were learning about the same two images. This information includes participant's political orientation and IQ. You will first be shown an overview of multiple participants at the same time.",,"Before the experiment begins, you will view information about other participants who previously completed the same experiment.
+Each participant is represented by a distinct geometric symbol.
+
+Press SPACE to continue.",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,,,,,,,,,,,,,,,,,,,,25.7851,26.2747,space,0.1157,,0,2,2,2,1,Political orientation will be shown as their responses to the political questions they answered before taking part in the experiment. Your responses will also be indicated.,,"The first piece of information about the other participants will be their political orientation, shown as their responses to the political questions they answered before taking part in the experiment. This will be presented once for all participants before the experiment begins.
+
+Press SPACE to continue",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,,,,,,,,,,,,,,,,,,,,26.2917,26.9362,space,0.1335,,0,3,3,3,1,You will also be given each participant's IQ information.,,"You will also be given each participant's IQ information.
+The information will be presented once for all participants before the experiment begins
+
+Press SPACE to continue.",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,,,,,,,,,,,,,,,,,,,,26.9467,27.5088,space,0.0515,,0,4,4,4,1,"After that, you will be noted with which participant you will be observing choices from. ",,"Before observing the choices of a particular participant, their information will be presented again in bold. 
+
+Press SPACE to continue.",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,,,,,,,,,,,,,,,,,,,,27.5747,28.0916,space,0.0576,,0,5,5,5,1,That participant's information (political orientation & IQ) will be presented again individually in bold.,,"You may use both information to predict the participant's choices and to inform your own choices.
+
+Press SPACE to continue",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,,,,,,,,,,,,,,,,,,,,28.1045,28.6918,space,0.0674,,0,6,6,6,1,"That participant's information (IQ) will be presented again individually in bold.
+",,"Once you have reviewed the participant information, please rate how well you expect each participant to perform in this experiment, using a scale from 0 to 100.
+This rating will be made twice for each participant: once immediately after you review the participant information, and once again after trials are complete.
+
+Press SPACE to continue.",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,,,,,,,,,,,,,,,,,,,,28.707,29.3923,space,0.1681,,0,7,7,7,1,"Next, you will be asked to indicate how close you feel to the participant.
+Use the scale ranging from 0 (Not close at all) to 100 (Very close) to rate your overall sense of closeness to them.",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,,,,,,,,,,,,,,,,,,,,29.3987,30.0256,space,0.1017,,0,8,8,8,1,,gi_inst_8.png,"You will now observe the past choices made by this specific participant as they tried to learn which of the two images was more rewarding. Please keep in mind that not all participants learned equally well.
+
+Before you are shown what the other person actually chose, you must first predict what you think they selected. You can then decide how best to use their choice to guide your own decision and maximize your payoff.
+
+Note: In the very first round, you will not have seen any of the other person's decisions yet. Therefore, your first prediction will simply be a random guess.",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,,,,,,,,,,,,,,,,,,,,30.0329,30.5863,space,0.0339,,0,9,9,9,1,"A round then proceeds as follows:
+
+1. Predict what the other participant will choose
+2. Observe what they actually choose
+3. Make your own choice
+
+To view a round, press the <Space> key.",,"A round then proceeds as follows:
+
+First, you will see the other person and you should predict the image that the other person has chosen. In the beginning, you should guess to predict the other’s choice, but after few rounds, you will have an idea what they will choose.
+
+Then, it will be shown which image the person actually selected.
+Next, you choose one of the same two images yourself. Note that the position of the images can vary between the other person and you and only the identity matters for determining which image has higher probability of reward.
+
+To view a round, press the <Space> key.",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,30.6062,31.125,space,0.0004,,0,0,0,0,1,options,,"On each trial, you will see a photo of the participant and two images. You will now observe which image they chose.
+Rewards are probabilistic, one image always has a higher reward probability, but 𝐧𝐞𝐢𝐭𝐡𝐞𝐫 𝐠𝐮𝐚𝐫𝐚𝐧𝐭𝐞𝐞𝐬 𝐚 𝐫𝐞𝐰𝐚𝐫𝐝 on every round.",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,31.1268,32.1249,space,0.4658,,0,1,1,1,1,options,,"You will first predict which image the participant chose.
+To indicate your prediction, press the left arrow key to select the left image, or the right arrow key to select the right image.
+",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,32.1274,32.6919,space,0.0419,,0,2,2,2,1,predicted,,"Once you have made your prediction, the image you predicted will be marked with a white border.",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,32.696,33.2259,space,0.0069,,0,3,3,3,1,revealed,,The image the participant actually chose will be marked with a green border.,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,33.2294,34.4369,space,0.6923,,0,4,4,4,1,outcome,,You would be able to observe the outcome (0 or 10 points) for the image selected by the person you are observing.,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,34.4407,35.0088,space,0.0548,,0,5,5,5,1,,options,,"After predicting the other participant's choice, it will be your turn to make your own choice.",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,35.0115,35.6096,space,0.0658,,0,6,6,6,1,,options,,The same two images will be shown again but the left-right position of the images may change. Please 𝐫𝐞𝐦𝐞𝐦𝐛𝐞𝐫 𝐭𝐡𝐞 𝐢𝐦𝐚𝐠𝐞𝐬 𝐭𝐡𝐞𝐦𝐬𝐞𝐥𝐯𝐞𝐬 rather than their position.,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,35.6146,36.1657,space,0.0312,,0,7,7,7,1,,options,,Select whichever image you believe has the higher reward probability using the left or right arrow key.,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,36.1674,36.6847,space,0.0003,,0,8,8,8,1,,chosen,,The image you selected will be marked with a white border.,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,36.6859,37.2207,space,0.0177,,0,9,9,9,1,,no_outcome,,The outcome of your chosen option will be concealed by an image as shown above.,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,37.2347,37.2357,0,0,0,0,1,"Please respond as quickly as possible. If a set amount of time passes without a response, the trial will automatically advance to the next one. In such trial, no white border will be indicated to show your response and you will not receive points for the trial.",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,37.2399,37.3105,0,1,1,1,1,"Remember, reward is always probabilistic: the image with a higher probability is sometimes unrewarded (0 points), and the image with a lower probability is sometimes rewarded (+10 points).
+
+You are observing the past choices of other participants so you can potentially use their decisions to guide your own choices.
+
+Once all trials are complete, your final payment will be determined by the total points you earned across all trials.",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,37.3229,37.387,0,2,2,2,1,You will rate your expectation on how well the other participant chose the image with higher reward probability.,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,37.3903,37.8266,0,3,3,3,1,"During the experiment, brief unannounced questions may be presented at certain points. These questions are intended to check your attention, and whether your response is correct will not be displayed on screen. 
+
+An incorrect response to one of these questions will result in a proportional REDUCTION IN YOUR FINAL REWARD.",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,37.834,38.436,0,4,4,4,1,"This concludes the instructions. 
+
+Next, a few multiple-choice questions will appear to confirm your understanding. Please use your number pad keys (1, 2, or 3) to submit your answer.
+
+Incorrect answers will return you to the instructions.
+Press <Enter> to begin.",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,"Reminders:
+
+Time Limits: Please respond as quickly as possible. If the time limit passes, the trial will skip automatically, and you will earn 0 points.
+
+Attention Checks: Brief, unannounced attention questions will appear throughout the experiment. Incorrect answers will result in a proportional reduction in your final reward.
+
+Performance Rating: You will be asked to rate how well you expect the other participant performed.
+
+Final Payout: Remember, your final payment is determined by the total points you earn across all trials (higher probability images = better chance at +10 points).",,,,,,,,,,,,,,,,,,,,,,,,,38.4398,38.4399,0,0,0,0,1,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,"Comprehension Check
+
+To ensure you remember the rules, a short multiple-choice quiz will appear next. Incorrect answers will return you to the beginning of the instructions.
+
+Use your number pad keys (1, 2, or 3) to submit your answers.
+
+Press <Enter> to begin.",,,,,,,,,,,,,,,,,,,,,,,,,38.4403,38.4404,0,1,1,1,1,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,38.4432,38.6934,1,0.1479,,Q4,0,2,0,0,0,0,1,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,38.7007,38.9765,1,0.1605,,Q1,0,2,1,0,1,0,1,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,38.9843,39.1096,1,0.0261,,Q3,0,2,2,0,2,0,1,,,,,,,,,,,,,,,,,,,,,,,
+,,,,6a4f5257c5adb9f372972db5,1,2026-08-14_15h44.18.437,learning_task,2026.1.3,Win32,60.24096386,6a7e7c5106c04d4e5991c10a,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,39.1118,39.2767,space,0.1448,,39.2771,,,,,,,,,,,,1,0,1,0,1,1

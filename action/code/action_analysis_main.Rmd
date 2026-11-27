@@ -410,6 +410,77 @@ ggsave(file.path(output_dir, "fig1_manipulation_checks.png"), fig_manipulation_c
        width = 140, height = 80, units = "mm", dpi = 300)
 ```
 
+## 4.4 Expected performance (pre): interaction plot by condition
+
+Each participant's pre-block expected performance is averaged within each condition. The plot shows the mean of these participant values with ± 1 SEM error bars, in the same style as the choice interaction plot (section 9.2).
+
+```{r expectation-conditions-data}
+expectation_condition_cells <- demonstrator_data %>%
+  filter(!is.na(perf_expectation_pre)) %>%
+  group_by(participant, grouping, iq) %>%
+  summarise(expectation_pre = mean(perf_expectation_pre), .groups = "drop")
+
+expectation_condition_summary <- expectation_condition_cells %>%
+  group_by(grouping, iq) %>%
+  summarise(n = n(), mean = mean(expectation_pre), sd = sd(expectation_pre), .groups = "drop") %>%
+  mutate(sem = sd / sqrt(n))
+
+expectation_condition_summary %>% mutate(across(where(is.numeric), ~ round(.x, 3)))
+```
+
+```{r expectation-conditions-figure, fig.width=4.2, fig.height=3.6}
+fig_expectation_conditions <- ggplot(expectation_condition_summary, aes(x = grouping, y = mean, colour = iq, group = iq)) +
+  geom_line(linewidth = 0.9, position = position_dodge(width = 0.1)) +
+  geom_errorbar(aes(ymin = mean - sem, ymax = mean + sem), width = 0.08, linewidth = 0.5,
+                position = position_dodge(width = 0.1)) +
+  geom_point(size = 3, position = position_dodge(width = 0.1)) +
+  scale_x_discrete(labels = label_grouping) +
+  scale_colour_manual(values = colour_iq, labels = label_iq, name = "Demonstrator IQ") +
+  labs(x = "Demonstrator group", y = "Expected performance (pre)", title = "Expected performance (pre)") +
+  theme(panel.grid.major.y = element_line(colour = "grey90", linewidth = 0.3))
+
+fig_expectation_conditions
+ggsave(file.path(output_dir, "expectation_conditions.png"), fig_expectation_conditions,
+       width = 105, height = 90, units = "mm", dpi = 300)
+```
+
+## 4.5 Expected performance update by demonstrator accuracy
+
+Expectation change = post-block expectation − pre-block expectation, computed for each block. `demo_accuracy` is the percentage of the 11 trials of a block on which the demonstrator chose the high-probability image. Each participant's changes are averaged within each demonstrator-accuracy level. The figure uses the same design as the overall learning curve (section 6): small grey points are participants, and the black line and ribbon show the mean and 95% CI. The dashed line marks no change.
+
+```{r expectation-update-data}
+expectation_update_participant <- demonstrator_data %>%
+  filter(!is.na(perf_expectation_pre), !is.na(perf_expectation_post), !is.na(demo_accuracy)) %>%
+  mutate(expectation_change = perf_expectation_post - perf_expectation_pre) %>%
+  group_by(participant, demo_accuracy) %>%
+  summarise(expectation_change = mean(expectation_change), .groups = "drop")
+
+expectation_update_summary <- expectation_update_participant %>%
+  group_by(demo_accuracy) %>%
+  summarise(n = n(), mean = mean(expectation_change), sd = sd(expectation_change), .groups = "drop") %>%
+  mutate(ci_low  = mean - qt(0.975, n - 1) * sd / sqrt(n),
+         ci_high = mean + qt(0.975, n - 1) * sd / sqrt(n))
+
+expectation_update_summary %>% mutate(across(where(is.numeric), ~ round(.x, 3)))
+```
+
+```{r expectation-update-figure, fig.width=4.5, fig.height=3.5}
+fig_expectation_update <- ggplot(expectation_update_participant, aes(x = demo_accuracy, y = expectation_change)) +
+  geom_hline(yintercept = 0, linetype = "dashed", colour = "grey50", linewidth = 0.4) +
+  geom_point(position = position_jitter(width = 1, height = 0, seed = 1),
+             colour = "grey55", alpha = 0.35, size = 0.8) +
+  geom_ribbon(data = expectation_update_summary, aes(x = demo_accuracy, ymin = ci_low, ymax = ci_high),
+              inherit.aes = FALSE, fill = "black", alpha = 0.15) +
+  geom_line(data = expectation_update_summary, aes(x = demo_accuracy, y = mean), inherit.aes = FALSE, linewidth = 1) +
+  geom_point(data = expectation_update_summary, aes(x = demo_accuracy, y = mean), inherit.aes = FALSE, size = 1.8) +
+  scale_x_continuous(breaks = sort(unique(expectation_update_summary$demo_accuracy))) +
+  labs(x = "Demonstrator accuracy (% high-probability choices)", y = "Expectation change (post - pre)")
+
+fig_expectation_update
+ggsave(file.path(output_dir, "expectation_update.png"), fig_expectation_update,
+       width = 110, height = 85, units = "mm", dpi = 300)
+```
+
 # 5. Choice learning model
 
 Trial-level logistic mixed model of choosing the high-probability option. Fixed effects: trial (centred), grouping, IQ and all their interactions. Random intercepts: participant and demonstrator image.
@@ -836,4 +907,319 @@ fig_interaction <- ggplot(interaction_summary, aes(x = grouping, y = mean, colou
 fig_interaction
 ggsave(file.path(output_dir, "fig6_interaction_group_by_iq.png"), fig_interaction,
        width = 105, height = 90, units = "mm", dpi = 300)
+```
+
+# 10. Prediction
+
+`pred_correct` = 1 if the participant's prediction matched the demonstrator's actual choice. These figures are descriptive.
+
+## 10.1 Prediction learning curves by group and by IQ
+
+Each participant's prediction accuracy on each trial is averaged over the blocks of each level (in-group / out-group, or high / low IQ). Lines and ribbons show the mean and 95% CI across participants. The dashed line is chance. Both panels are saved as one image.
+
+```{r prediction-marginal-data}
+prediction_grouping_curve_summary <- trial_data %>%
+  group_by(participant, grouping, trial_num) %>%
+  summarise(accuracy = mean(pred_correct, na.rm = TRUE), .groups = "drop") %>%
+  filter(!is.na(accuracy)) %>%
+  mutate(trial = trial_num + 1) %>%
+  group_by(grouping, trial) %>%
+  summarise(n = n(), mean = mean(accuracy), sd = sd(accuracy), .groups = "drop") %>%
+  mutate(ci_low  = mean - qt(0.975, n - 1) * sd / sqrt(n),
+         ci_high = mean + qt(0.975, n - 1) * sd / sqrt(n))
+
+prediction_iq_curve_summary <- trial_data %>%
+  group_by(participant, iq, trial_num) %>%
+  summarise(accuracy = mean(pred_correct, na.rm = TRUE), .groups = "drop") %>%
+  filter(!is.na(accuracy)) %>%
+  mutate(trial = trial_num + 1) %>%
+  group_by(iq, trial) %>%
+  summarise(n = n(), mean = mean(accuracy), sd = sd(accuracy), .groups = "drop") %>%
+  mutate(ci_low  = mean - qt(0.975, n - 1) * sd / sqrt(n),
+         ci_high = mean + qt(0.975, n - 1) * sd / sqrt(n))
+
+prediction_grouping_curve_summary %>% mutate(across(where(is.numeric), ~ round(.x, 3)))
+prediction_iq_curve_summary %>% mutate(across(where(is.numeric), ~ round(.x, 3)))
+```
+
+```{r prediction-marginal-figure, fig.width=7.2, fig.height=3.6}
+fig_prediction_curve_grouping <- ggplot(prediction_grouping_curve_summary, aes(x = trial, y = mean, colour = grouping)) +
+  geom_hline(yintercept = chance_level, linetype = "dashed", colour = "grey50", linewidth = 0.4) +
+  geom_ribbon(aes(ymin = ci_low, ymax = ci_high, fill = grouping), colour = NA, alpha = 0.15) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 1.8) +
+  scale_colour_manual(values = colour_grouping, labels = label_grouping, name = NULL) +
+  scale_fill_manual(values = colour_grouping, labels = label_grouping, name = NULL) +
+  scale_x_continuous(breaks = sort(unique(prediction_grouping_curve_summary$trial))) +
+  coord_cartesian(ylim = c(0, 1)) +
+  labs(x = "Trial", y = "P(correct prediction)")
+
+fig_prediction_curve_iq <- ggplot(prediction_iq_curve_summary, aes(x = trial, y = mean, colour = iq)) +
+  geom_hline(yintercept = chance_level, linetype = "dashed", colour = "grey50", linewidth = 0.4) +
+  geom_ribbon(aes(ymin = ci_low, ymax = ci_high, fill = iq), colour = NA, alpha = 0.15) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 1.8) +
+  scale_colour_manual(values = colour_iq, labels = label_iq, name = NULL) +
+  scale_fill_manual(values = colour_iq, labels = label_iq, name = NULL) +
+  scale_x_continuous(breaks = sort(unique(prediction_iq_curve_summary$trial))) +
+  coord_cartesian(ylim = c(0, 1)) +
+  labs(x = "Trial", y = "P(correct prediction)")
+
+fig_prediction_marginal <- (fig_prediction_curve_grouping | fig_prediction_curve_iq) + plot_annotation(tag_levels = "A")
+fig_prediction_marginal
+ggsave(file.path(output_dir, "prediction_marginal.png"), fig_prediction_marginal,
+       width = 183, height = 85, units = "mm", dpi = 300)
+```
+
+## 10.2 Prediction learning curves of the four conditions in one plot
+
+Same layout as the choice curves in 9.1: mean ± 95% CI per trial. Colour shows group, and line type and marker show IQ: solid line and filled circle = high IQ, dashed line and open diamond = low IQ.
+
+```{r combined-prediction-curve-data}
+condition_prediction_curve_summary <- trial_data %>%
+  group_by(participant, grouping, iq, trial_num) %>%
+  summarise(accuracy = mean(pred_correct, na.rm = TRUE), .groups = "drop") %>%
+  filter(!is.na(accuracy)) %>%
+  mutate(trial     = trial_num + 1,
+         condition = factor(paste0(label_grouping[as.character(grouping)], ", ", label_iq[as.character(iq)]),
+                            levels = condition_levels)) %>%
+  group_by(condition, grouping, iq, trial) %>%
+  summarise(n = n(), mean = mean(accuracy), sd = sd(accuracy), .groups = "drop") %>%
+  mutate(ci_low  = mean - qt(0.975, n - 1) * sd / sqrt(n),
+         ci_high = mean + qt(0.975, n - 1) * sd / sqrt(n))
+
+condition_prediction_curve_summary %>% mutate(across(where(is.numeric), ~ round(.x, 3)))
+```
+
+```{r combined-prediction-curve-figure, fig.width=7.2, fig.height=4.2}
+fig_combined_prediction_curve <- ggplot(condition_prediction_curve_summary,
+                                        aes(x = trial, y = mean, colour = condition, linetype = condition, shape = condition)) +
+  geom_hline(yintercept = chance_level, linetype = "dashed", colour = "grey60", linewidth = 0.3) +
+  geom_errorbar(aes(ymin = ci_low, ymax = ci_high), width = 0.15, linewidth = 0.35, linetype = "solid",
+                position = position_dodge(width = 0.3), show.legend = FALSE) +
+  geom_line(linewidth = 0.8, position = position_dodge(width = 0.3)) +
+  geom_point(size = 2.2, stroke = 1, fill = "white", position = position_dodge(width = 0.3)) +
+  scale_colour_manual(values = setNames(unname(colour_grouping[c("in", "in", "out", "out")]), condition_levels), name = NULL) +
+  scale_linetype_manual(values = setNames(c("solid", "dashed", "solid", "dashed"), condition_levels), name = NULL) +
+  scale_shape_manual(values = setNames(c(16, 23, 16, 23), condition_levels), name = NULL) +
+  scale_x_continuous(breaks = sort(unique(condition_prediction_curve_summary$trial))) +
+  labs(x = "Trial", y = "P(correct prediction)") +
+  guides(colour = guide_legend(nrow = 2), linetype = guide_legend(nrow = 2), shape = guide_legend(nrow = 2))
+
+fig_combined_prediction_curve
+ggsave(file.path(output_dir, "combined_prediction_curve.png"), fig_combined_prediction_curve,
+       width = 183, height = 105, units = "mm", dpi = 300)
+```
+
+# 11. Imitation
+
+`imitated` = 1 if the participant's choice matched the demonstrator's choice (high- vs. low-probability image).
+
+## 11.1 Interaction plot: imitation in the first trial and the first five trials
+
+Each participant's imitation rate is averaged within each condition, separately for the first trial of each block and for the first five trials of each block. The plot shows the mean of these participant values with ± 1 SEM error bars.
+
+Simple effects are tested with paired Wilcoxon signed-rank tests on the participant values. No correction for multiple comparisons is applied.
+
+* in-group vs. out-group within each IQ level: coloured horizontal bracket above the panel (colour = IQ level);
+* high vs. low IQ within each group: black vertical bar to the right of that group's two points.
+
+Only significant comparisons are drawn (* p < .05, ** p < .01, *** p < .001). All test results are printed below.
+
+```{r imitation-conditions-data}
+imitation_window_cells <- bind_rows(
+  trial_data %>% filter(trial_num == min(trial_num)) %>% mutate(trial_window = "First trial"),
+  trial_data %>% filter(trial_num <= min(trial_num) + 4) %>% mutate(trial_window = "First five trials")) %>%
+  mutate(trial_window = factor(trial_window, levels = c("First trial", "First five trials"))) %>%
+  group_by(trial_window, participant, grouping, iq) %>%
+  summarise(imitation_rate = mean(imitated, na.rm = TRUE), .groups = "drop") %>%
+  filter(!is.na(imitation_rate))
+
+imitation_window_summary <- imitation_window_cells %>%
+  group_by(trial_window, grouping, iq) %>%
+  summarise(n = n(), mean = mean(imitation_rate), sd = sd(imitation_rate), .groups = "drop") %>%
+  mutate(sem   = sd / sqrt(n),
+         x_pos = as.numeric(grouping) + ifelse(iq == "high", -0.03, 0.03))
+
+imitation_window_summary %>% mutate(across(where(is.numeric), ~ round(.x, 3)))
+
+# in-group vs. out-group within each IQ level
+imitation_group_tests <- imitation_window_cells %>%
+  pivot_wider(names_from = grouping, values_from = imitation_rate) %>%
+  filter(!is.na(`in`), !is.na(out)) %>%
+  group_by(trial_window, iq) %>%
+  summarise(n        = n(),
+            mean_in  = mean(`in`),
+            mean_out = mean(out),
+            V        = unname(wilcox.test(`in`, out, paired = TRUE)$statistic),
+            p_wilcox = wilcox.test(`in`, out, paired = TRUE)$p.value,
+            .groups = "drop")
+
+# high vs. low IQ within each group
+imitation_iq_tests <- imitation_window_cells %>%
+  pivot_wider(names_from = iq, values_from = imitation_rate) %>%
+  filter(!is.na(high), !is.na(low)) %>%
+  group_by(trial_window, grouping) %>%
+  summarise(n         = n(),
+            mean_high = mean(high),
+            mean_low  = mean(low),
+            V         = unname(wilcox.test(high, low, paired = TRUE)$statistic),
+            p_wilcox  = wilcox.test(high, low, paired = TRUE)$p.value,
+            .groups = "drop")
+
+imitation_group_tests %>% mutate(p_wilcox = scales::pvalue(p_wilcox, accuracy = 0.001), across(where(is.numeric), ~ round(.x, 3)))
+imitation_iq_tests %>% mutate(p_wilcox = scales::pvalue(p_wilcox, accuracy = 0.001), across(where(is.numeric), ~ round(.x, 3)))
+```
+
+```{r imitation-conditions-figure, fig.width=7.2, fig.height=3.8}
+# vertical space of each panel, used to place the brackets
+imitation_window_range <- imitation_window_summary %>%
+  group_by(trial_window) %>%
+  summarise(top = max(mean + sem), span = max(mean + sem) - min(mean - sem), .groups = "drop")
+
+# horizontal brackets: in vs. out within each IQ level (only significant tests)
+imitation_group_significance <- imitation_group_tests %>%
+  filter(p_wilcox < .05) %>%
+  left_join(imitation_window_range, by = "trial_window") %>%
+  mutate(x     = 1 + ifelse(iq == "high", -0.03, 0.03),
+         xend  = 2 + ifelse(iq == "high", -0.03, 0.03),
+         y     = top + span * ifelse(iq == "high", 0.15, 0.35),
+         label = case_when(p_wilcox < .001 ~ "***", p_wilcox < .01 ~ "**", TRUE ~ "*"))
+
+# vertical bars: high vs. low IQ within each group (only significant tests)
+imitation_iq_significance <- imitation_iq_tests %>%
+  filter(p_wilcox < .05) %>%
+  left_join(imitation_window_summary %>%
+              select(trial_window, grouping, iq, mean) %>%
+              pivot_wider(names_from = iq, values_from = mean, names_prefix = "plot_mean_"),
+            by = c("trial_window", "grouping")) %>%
+  mutate(x     = as.numeric(grouping) + 0.12,
+         label = case_when(p_wilcox < .001 ~ "***", p_wilcox < .01 ~ "**", TRUE ~ "*"))
+
+fig_imitation_conditions <- ggplot(imitation_window_summary, aes(x = x_pos, y = mean, colour = iq, group = iq)) +
+  geom_line(linewidth = 0.9) +
+  geom_errorbar(aes(ymin = mean - sem, ymax = mean + sem), width = 0.08, linewidth = 0.5) +
+  geom_point(size = 3) +
+  geom_segment(data = imitation_group_significance, aes(x = x, xend = xend, y = y, yend = y, colour = iq),
+               inherit.aes = FALSE, linewidth = 0.5, show.legend = FALSE) +
+  geom_text(data = imitation_group_significance, aes(x = 1.5, y = y, label = label, colour = iq),
+            inherit.aes = FALSE, vjust = -0.2, size = 4, show.legend = FALSE) +
+  geom_segment(data = imitation_iq_significance, aes(x = x, xend = x, y = plot_mean_high, yend = plot_mean_low),
+               inherit.aes = FALSE, linewidth = 0.5) +
+  geom_text(data = imitation_iq_significance, aes(x = x + 0.03, y = (plot_mean_high + plot_mean_low) / 2, label = label),
+            inherit.aes = FALSE, hjust = 0, size = 4) +
+  facet_wrap(~ trial_window, scales = "free_y") +
+  scale_x_continuous(breaks = 1:2, labels = label_grouping[c("in", "out")], expand = expansion(add = 0.35)) +
+  scale_y_continuous(expand = expansion(mult = c(0.08, 0.2))) +
+  scale_colour_manual(values = colour_iq, labels = label_iq, name = "Demonstrator IQ") +
+  labs(x = "Demonstrator group", y = "Imitation rate") +
+  theme(panel.grid.major.y = element_line(colour = "grey90", linewidth = 0.3))
+
+fig_imitation_conditions
+ggsave(file.path(output_dir, "imitation_conditions.png"), fig_imitation_conditions,
+       width = 183, height = 95, units = "mm", dpi = 300)
+```
+
+# 12. Reaction time
+
+## 12.1 Interaction plot: choice and prediction RT by condition
+
+All recorded RTs are used, without a time-based exclusion. Each participant's RTs are averaged within each condition, separately for the choice and the prediction phase. The plot shows the mean of these participant values with ± 1 SEM error bars. Both phases are saved as one image.
+
+Simple effects are tested and drawn in the same way as in 11.1: paired Wilcoxon signed-rank tests, no correction for multiple comparisons, and only significant comparisons drawn (* p < .05, ** p < .01, *** p < .001).
+
+* in-group vs. out-group within each IQ level: coloured horizontal bracket above the panel (colour = IQ level);
+* high vs. low IQ within each group: black vertical bar to the right of that group's two points.
+
+```{r reaction-time-data}
+rt_condition_cells <- trial_data %>%
+  pivot_longer(c(choice_rt, pred_rt), names_to = "task_phase", values_to = "rt") %>%
+  filter(!is.na(rt)) %>%
+  mutate(task_phase = factor(ifelse(task_phase == "choice_rt", "Choice", "Prediction"), levels = c("Choice", "Prediction"))) %>%
+  group_by(task_phase, participant, grouping, iq) %>%
+  summarise(rt = mean(rt), .groups = "drop")
+
+rt_condition_summary <- rt_condition_cells %>%
+  group_by(task_phase, grouping, iq) %>%
+  summarise(n = n(), mean = mean(rt), sd = sd(rt), .groups = "drop") %>%
+  mutate(sem   = sd / sqrt(n),
+         x_pos = as.numeric(grouping) + ifelse(iq == "high", -0.03, 0.03))
+
+rt_condition_summary %>% mutate(across(where(is.numeric), ~ round(.x, 1)))
+
+# in-group vs. out-group within each IQ level
+rt_group_tests <- rt_condition_cells %>%
+  pivot_wider(names_from = grouping, values_from = rt) %>%
+  filter(!is.na(`in`), !is.na(out)) %>%
+  group_by(task_phase, iq) %>%
+  summarise(n        = n(),
+            mean_in  = mean(`in`),
+            mean_out = mean(out),
+            V        = unname(wilcox.test(`in`, out, paired = TRUE)$statistic),
+            p_wilcox = wilcox.test(`in`, out, paired = TRUE)$p.value,
+            .groups = "drop")
+
+# high vs. low IQ within each group
+rt_iq_tests <- rt_condition_cells %>%
+  pivot_wider(names_from = iq, values_from = rt) %>%
+  filter(!is.na(high), !is.na(low)) %>%
+  group_by(task_phase, grouping) %>%
+  summarise(n         = n(),
+            mean_high = mean(high),
+            mean_low  = mean(low),
+            V         = unname(wilcox.test(high, low, paired = TRUE)$statistic),
+            p_wilcox  = wilcox.test(high, low, paired = TRUE)$p.value,
+            .groups = "drop")
+
+rt_group_tests %>% mutate(p_wilcox = scales::pvalue(p_wilcox, accuracy = 0.001), across(where(is.numeric), ~ round(.x, 3)))
+rt_iq_tests %>% mutate(p_wilcox = scales::pvalue(p_wilcox, accuracy = 0.001), across(where(is.numeric), ~ round(.x, 3)))
+```
+
+```{r reaction-time-figure, fig.width=7.2, fig.height=3.8}
+# vertical space of each panel, used to place the brackets
+rt_phase_range <- rt_condition_summary %>%
+  group_by(task_phase) %>%
+  summarise(top = max(mean + sem), span = max(mean + sem) - min(mean - sem), .groups = "drop")
+
+# horizontal brackets: in vs. out within each IQ level (only significant tests)
+rt_group_significance <- rt_group_tests %>%
+  filter(p_wilcox < .05) %>%
+  left_join(rt_phase_range, by = "task_phase") %>%
+  mutate(x     = 1 + ifelse(iq == "high", -0.03, 0.03),
+         xend  = 2 + ifelse(iq == "high", -0.03, 0.03),
+         y     = top + span * ifelse(iq == "high", 0.15, 0.35),
+         label = case_when(p_wilcox < .001 ~ "***", p_wilcox < .01 ~ "**", TRUE ~ "*"))
+
+# vertical bars: high vs. low IQ within each group (only significant tests)
+rt_iq_significance <- rt_iq_tests %>%
+  filter(p_wilcox < .05) %>%
+  left_join(rt_condition_summary %>%
+              select(task_phase, grouping, iq, mean) %>%
+              pivot_wider(names_from = iq, values_from = mean, names_prefix = "plot_mean_"),
+            by = c("task_phase", "grouping")) %>%
+  mutate(x     = as.numeric(grouping) + 0.12,
+         label = case_when(p_wilcox < .001 ~ "***", p_wilcox < .01 ~ "**", TRUE ~ "*"))
+
+fig_reaction_time <- ggplot(rt_condition_summary, aes(x = x_pos, y = mean, colour = iq, group = iq)) +
+  geom_line(linewidth = 0.9) +
+  geom_errorbar(aes(ymin = mean - sem, ymax = mean + sem), width = 0.08, linewidth = 0.5) +
+  geom_point(size = 3) +
+  geom_segment(data = rt_group_significance, aes(x = x, xend = xend, y = y, yend = y, colour = iq),
+               inherit.aes = FALSE, linewidth = 0.5, show.legend = FALSE) +
+  geom_text(data = rt_group_significance, aes(x = 1.5, y = y, label = label, colour = iq),
+            inherit.aes = FALSE, vjust = -0.2, size = 4, show.legend = FALSE) +
+  geom_segment(data = rt_iq_significance, aes(x = x, xend = x, y = plot_mean_high, yend = plot_mean_low),
+               inherit.aes = FALSE, linewidth = 0.5) +
+  geom_text(data = rt_iq_significance, aes(x = x + 0.03, y = (plot_mean_high + plot_mean_low) / 2, label = label),
+            inherit.aes = FALSE, hjust = 0, size = 4) +
+  facet_wrap(~ task_phase, scales = "free_y") +
+  scale_x_continuous(breaks = 1:2, labels = label_grouping[c("in", "out")], expand = expansion(add = 0.35)) +
+  scale_y_continuous(expand = expansion(mult = c(0.08, 0.2))) +
+  scale_colour_manual(values = colour_iq, labels = label_iq, name = "Demonstrator IQ") +
+  labs(x = "Demonstrator group", y = "Mean RT (ms)") +
+  theme(panel.grid.major.y = element_line(colour = "grey90", linewidth = 0.3))
+
+fig_reaction_time
+ggsave(file.path(output_dir, "reaction_time.png"), fig_reaction_time,
+       width = 183, height = 95, units = "mm", dpi = 300)
 ```
